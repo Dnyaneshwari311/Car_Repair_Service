@@ -268,7 +268,8 @@ fixtures = [
             ["name", "in", [
                 "Car Repair Request After Create Diagnosis",
                 "Create Sales Invoice After Car Repair",
-                "Create Quatation On Dignosis"
+                "Create Quatation On Dignosis",
+                "Car Repair Status Should Be Mark As Completed"
                 
             ]]
         ]
