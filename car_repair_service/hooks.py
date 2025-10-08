@@ -301,6 +301,12 @@ fixtures = [
             ["name", "=", "Car Repair Service"]
         ]
     },
- 
+    {
+        "dt": "Workflow",
+        "filters": [["document_type", "in", [
+            "Quotation"
+            ]]
+        ]
+    },
     
 ]
