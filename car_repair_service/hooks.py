@@ -242,3 +242,59 @@ app_license = "mit"
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+# doc_events = {
+#     "Quotation": {
+#         "after_insert": "car_repair_service.api.quotation_mail.send_quotation_email",
+#         "on_update": "car_repair_service.api.quotation_mail.send_quotation_email"
+#         # "on_update": "car_repair_service.api.quotation_approved.create_car_repair_on_quotation_approval"
+        
+#     }
+# }
+
+
+
+doc_events = {
+    "Quotation": {
+        "after_insert": "car_repair_service.api.quotation_mail.send_quotation_created_email",
+        "on_update": "car_repair_service.api.quotation_mail.send_quotation_update_email"
+    }
+}
+
+fixtures = [
+    
+    {
+        "dt": "Client Script",
+        "filters": [
+            ["name", "in", [
+                "Car Repair Request After Create Diagnosis",
+                "Create Sales Invoice After Car Repair",
+                "Create Quatation On Dignosis"
+                
+            ]]
+        ]
+    },
+	{
+        "dt": "Server Script",
+        "filters": [
+
+            ["name", "in", [
+                "Car Repair Request Welcome Email To Customer",
+                "Car Request Get Creaed Customer Getting Created In System",
+                "Car Repair Status Should Be Completed",
+                "Create Approve Car Repair Doc From Quotation"
+
+
+                
+                
+            ]]
+		]
+          
+    },
+ 
+     {
+        "doctype": "Website Settings"
+       
+    }
+ 
+    
+]
