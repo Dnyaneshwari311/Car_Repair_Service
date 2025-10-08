@@ -294,7 +294,13 @@ fixtures = [
      {
         "doctype": "Website Settings"
        
-    }
+    },
+     {
+        "dt": "Workspace",
+        "filters": [
+            ["name", "=", "Car Repair Service"]
+        ]
+    },
  
     
 ]
