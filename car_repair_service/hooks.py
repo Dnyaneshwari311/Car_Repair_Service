@@ -311,6 +311,6 @@ fixtures = [
     },
     {
         "doctype": "Workflow State",
-        "filters": [["parent", "in", ["Your Workflow Name"]]]
+        "filters": [["parent", "in", ["Workflow for Quatation"]]]
     },
 ]
