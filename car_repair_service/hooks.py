@@ -307,15 +307,10 @@ fixtures = [
             ["name", "=", "Car Repair Service"]
         ]
     },
-    {
-        "dt": "Workflow",
-        "filters": [["document_type", "in", [
-            "Quotation"
-            ]]
-        ]
-    },
-    {
-        "doctype": "Workflow State",
-        "filters": [["parent", "in", ["Workflow for Quatation"]]]
-    },
+    
+   {
+    "dt": "Workflow",
+    "filters": [["name", "in", ["Workflow for Quatation"]]]
+},
+
 ]
