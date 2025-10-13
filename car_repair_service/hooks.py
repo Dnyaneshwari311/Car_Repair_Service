@@ -319,8 +319,10 @@ fixtures = [
     
    {
     "dt": "Workflow",
-    "filters": [["name", "in", ["Workflow for Quatation"]]]
-},
+    "filters": [["name", "in", [
+        "Workflow for Quatation",
+        "Workflow For Sales invoice"]]]
+   },
  {
         "dt": "DocType",
         "filters": [
