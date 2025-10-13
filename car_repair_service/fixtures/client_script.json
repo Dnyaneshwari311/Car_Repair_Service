@@ -53,5 +53,27 @@
   "name": "Item Maintain Stock Always Check Read Only",
   "script": "frappe.ui.form.on('Item', {\n    refresh: function(frm) {\n        // Make the field read-only\n        frm.set_df_property('is_stock_item', 'read_only', 1);  // replace with 'maintain_stock' if needed\n    }\n});\n",
   "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Item",
+  "enabled": 1,
+  "modified": "2025-10-13 18:32:38.445185",
+  "module": null,
+  "name": "Map Item Naming Series",
+  "script": "// // Client Script for Item doctype\n// // Place this in the Client Script section for Item doctype\n\n// frappe.ui.form.on('Item', {\n//     item_group: function(frm) {\n//         if (frm.doc.item_group && frm.doc.item_group.length >= 4) {\n//             generateItemCode(frm);\n//         } else {\n//             frm.set_value('item_code', '');\n//             if (!frm.doc.item_name) {\n//                 frm.set_value('item_name', '');\n//             }\n//         }\n//     },\n\n//     refresh: function(frm) {\n//         // Generate code if group exists but code is empty\n//         if (frm.doc.item_group && frm.doc.item_group.length >= 4 && (!frm.doc.item_code || frm.doc.item_code === '')) {\n//             generateItemCode(frm);\n//         }\n//     }\n// });\n\nfrappe.ui.form.on('Item', {\n    item_group: function(frm) {\n        if (frm.doc.item_group && frm.doc.item_group.length >= 4) {\n            // Generate item_code based on item_group\n            generateItemCode(frm);\n\n            // Keep item_name blank for manual entry\n            frm.set_value('item_name', '');\n        } else {\n            // Clear item_code and item_name if item_group is too short\n            frm.set_value('item_code', '');\n            frm.set_value('item_name', '');\n        }\n    }\n});\n\nfunction generateItemCode(frm) {\n    if (!frm.doc.item_group) return;\n\n    var groupPrefix = frm.doc.item_group.substring(0, 4).toUpperCase();\n\n    frappe.call({\n        method: 'frappe.client.get_list',\n        args: {\n            doctype: 'Item',\n            filters: [\n                ['item_code', 'like', groupPrefix + '%']\n            ],\n            fields: ['item_code'],\n            order_by: 'item_code desc',\n            limit: 1\n        },\n        callback: function(r) {\n            var nextNumber = 1;\n\n            if (r.message && r.message.length > 0) {\n                var lastCode = r.message[0].item_code;\n                var lastNumber = parseInt(lastCode.substring(4)) || 0;\n                nextNumber = lastNumber + 1;\n            }\n\n            var formattedNumber = ('0000' + nextNumber).slice(-4);\n            var generatedCode = groupPrefix + formattedNumber;\n\n            // Set only item_code\n            frm.set_value('item_code', generatedCode);\n\n            // Do NOT set item_name, leave it blank for manual input\n        }\n    });\n}\n",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Item",
+  "enabled": 1,
+  "modified": "2025-10-13 18:48:11.208443",
+  "module": null,
+  "name": "Item Name Blank",
+  "script": "// This script will run on the Item form\nfrappe.ui.form.on('Item', {\n  // Trigger this function when the item_code field changes or is set\n  item_code: function(frm) {\n    // Only clear the item_name if it was automatically set to the item_code\n    if (frm.doc.item_name === frm.doc.item_code) {\n      frm.set_value(\"item_name\", \"\");\n    }\n  }\n});\n",
+  "view": "Form"
  }
 ]

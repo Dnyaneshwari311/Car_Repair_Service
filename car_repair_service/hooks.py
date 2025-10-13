@@ -250,6 +250,11 @@ app_license = "mit"
         
 #     }
 # }
+# frappe-cars/frappe_cars/hooks.py
+
+permission_query_conditions = {
+    "Car repair": "car_repair_service.api.car_repair.get_permission_query_conditions"
+}
 
 
 
@@ -270,7 +275,11 @@ fixtures = [
                 "Create Sales Invoice After Car Repair",
                 "Create Quatation On Dignosis",
                 "Car Repair Status Should Be Mark As Completed",   
-                "Item Maintain Stock Always Check Read Only"
+                "Item Maintain Stock Always Check Read Only",
+                "Map Item Naming Series",
+                "Item Name Blank"
+
+
 
 
                 
