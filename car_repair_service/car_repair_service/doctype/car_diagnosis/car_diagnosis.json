@@ -5,6 +5,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "reference_no",
   "license_plate",
   "car",
   "model",
@@ -16,15 +17,18 @@
   "email_id",
   "date_of_receipt",
   "source_request",
+  "chassis_no",
   "customer_info_section",
   "customer_name",
   "contact_name",
-  "car_diagnosis_detail"
+  "car_diagnosis_detail",
+  "remark"
  ],
  "fields": [
   {
    "fieldname": "subject",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Subject"
   },
   {
@@ -47,6 +51,7 @@
   {
    "fieldname": "date_of_receipt",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Date of Receipt"
   },
   {
@@ -63,6 +68,7 @@
   {
    "fieldname": "contact_name",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Contact Name"
   },
   {
@@ -91,6 +97,7 @@
   {
    "fieldname": "model",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Model",
    "options": "Vehicle"
   },
@@ -104,12 +111,30 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Source Request"
+  },
+  {
+   "fieldname": "reference_no",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Reference No",
+   "options": "Car Repair Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "chassis_no",
+   "fieldtype": "Data",
+   "label": "Chassis No"
+  },
+  {
+   "fieldname": "remark",
+   "fieldtype": "Long Text",
+   "label": "Remark"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-04 16:29:34.509557",
+ "modified": "2025-10-10 15:45:24.110892",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Diagnosis",

@@ -269,7 +269,10 @@ fixtures = [
                 "Car Repair Request After Create Diagnosis",
                 "Create Sales Invoice After Car Repair",
                 "Create Quatation On Dignosis",
-                "Car Repair Status Should Be Mark As Completed"
+                "Car Repair Status Should Be Mark As Completed",   
+                "Item Maintain Stock Always Check Read Only"
+
+
                 
             ]]
         ]
@@ -282,7 +285,9 @@ fixtures = [
                 "Car Repair Request Welcome Email To Customer",
                 "Car Request Get Creaed Customer Getting Created In System",
                 "Car Repair Status Should Be Completed",
-                "Create Approve Car Repair Doc From Quotation"
+                "Create Approve Car Repair Doc From Quotation",
+                "Add Car Repair Request Reference No To Car Repair",
+                "Add Car Repair Reference No To Car Diagnosis"
 
 
                 
