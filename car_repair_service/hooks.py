@@ -315,7 +315,7 @@ fixtures = [
  {
         "dt": "DocType",
         "filters": [
-            ["name", "in", ["Item","Sales Invoice"
+            ["name", "in", ["Item","Sales Invoice","Sales Invoice Item"
             ]]
         ]
     },
