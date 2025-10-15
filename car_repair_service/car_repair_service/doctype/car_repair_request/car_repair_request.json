@@ -20,6 +20,8 @@
   "service_type",
   "priority",
   "repair_request_date",
+  "vehicle_pick_up",
+  "pick_up_address",
   "car_repair_images",
   "remark"
  ],
@@ -113,6 +115,18 @@
    "fieldname": "remark",
    "fieldtype": "Long Text",
    "label": "Remark"
+  },
+  {
+   "default": "0",
+   "fieldname": "vehicle_pick_up",
+   "fieldtype": "Check",
+   "label": "Vehicle Pick Up"
+  },
+  {
+   "fieldname": "pick_up_address",
+   "fieldtype": "Data",
+   "label": "Pick Up Address",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
@@ -123,7 +137,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2025-10-10 15:46:55.209922",
+ "modified": "2025-10-14 15:51:59.699804",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",
@@ -146,5 +160,6 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
