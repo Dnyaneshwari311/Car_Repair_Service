@@ -356,4 +356,11 @@ fixtures = [
             ]]
         ]
     },
+ 
+  {
+        "doctype": "Report",
+        "filters": [
+            ["name", "in", ["Car Repair History Log Report"]]
+        ]
+    }
 ]

@@ -1,0 +1,34 @@
+[
+ {
+  "add_total_row": 0,
+  "add_translate_data": 0,
+  "columns": [],
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Report",
+  "filters": [],
+  "is_standard": "No",
+  "javascript": null,
+  "json": "{}",
+  "letter_head": null,
+  "modified": "2025-10-15 11:27:34.076406",
+  "module": "Car Repair service",
+  "name": "Car Repair History Log Report",
+  "prepared_report": 0,
+  "query": null,
+  "ref_doctype": "Car Repair History Log",
+  "reference_report": null,
+  "report_name": "Car Repair History Log Report",
+  "report_script": null,
+  "report_type": "Report Builder",
+  "roles": [
+   {
+    "parent": "Car Repair History Log Report",
+    "parentfield": "roles",
+    "parenttype": "Report",
+    "role": "System Manager"
+   }
+  ],
+  "timeout": 0
+ }
+]
