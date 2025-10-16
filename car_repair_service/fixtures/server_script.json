@@ -112,5 +112,24 @@
   "reference_doctype": "Car repair",
   "script": "# Auto-fill Reference No from linked Car Repair Request\nif doc.car_repair_request and not doc.reference_no:\n    doc.reference_no = doc.car_repair_request\n",
   "script_type": "DocType Event"
+ },
+ {
+  "allow_guest": 0,
+  "api_method": null,
+  "cron_format": null,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Server Script",
+  "doctype_event": "Before Save",
+  "enable_rate_limit": 0,
+  "event_frequency": "All",
+  "modified": "2025-10-14 10:39:13.512747",
+  "module": null,
+  "name": "Quotation Approved Timstamp",
+  "rate_limit_count": 5,
+  "rate_limit_seconds": 86400,
+  "reference_doctype": "Quotation",
+  "script": "# Server Script: Set Quotation Approval Timestamps\n\n# import frappe\n# from frappe.utils import now_datetime\n\n# Capture timestamps when approval happens\nif doc.workflow_state == \"Approved\":\n\n    # Identify who approved (optional logic)\n    if frappe.session.user != \"Administrator\":\n        user_roles = frappe.get_roles(frappe.session.user)\n        \n        # If user is Customer\n        if \"Customer\" in user_roles and not doc.customer_approved_on:\n            doc.customer_approved_on = now_datetime()\n\n        # If user is Service Provider\n        elif \"Service Provider\" in user_roles and not doc.service_provider_approved_on:\n            doc.service_provider_approved_on = now_datetime()\n",
+  "script_type": "DocType Event"
  }
 ]

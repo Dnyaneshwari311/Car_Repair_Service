@@ -297,7 +297,8 @@ fixtures = [
                 "Item Name Blank",
                 "Remove Spaces From Field",
                 "Vehicle Pick Up Check Car Repair Images should be Manadatory",
-                "Vehicle Pick Up Address Disply Bydefault"
+                "Vehicle Pick Up Address Disply Bydefault",
+                "Remove Spaces From Vehicle Doc"
 
 
 
@@ -316,7 +317,8 @@ fixtures = [
                 "Car Repair Status Should Be Completed",
                 "Create Approve Car Repair Doc From Quotation",
                 "Add Car Repair Request Reference No To Car Repair",
-                "Add Car Repair Reference No To Car Diagnosis"
+                "Add Car Repair Reference No To Car Diagnosis",
+                "Quotation Approved Timstamp"
 
 
                 
@@ -346,7 +348,11 @@ fixtures = [
  {
         "dt": "DocType",
         "filters": [
-            ["name", "in", ["Item","Sales Invoice","Sales Invoice Item"
+            ["name", "in", ["Item",
+                            "Sales Invoice",
+                            "Sales Invoice Item",
+                            "Vehicle",
+                            "Quotation"
             ]]
         ]
     },

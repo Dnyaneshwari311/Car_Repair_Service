@@ -21,6 +21,7 @@
   "customer_info_section",
   "customer_name",
   "contact_name",
+  "car_repair_images",
   "car_diagnosis_detail",
   "remark"
  ],
@@ -129,12 +130,19 @@
    "fieldname": "remark",
    "fieldtype": "Long Text",
    "label": "Remark"
+  },
+  {
+   "fieldname": "car_repair_images",
+   "fieldtype": "Table",
+   "label": "Car Repair Images",
+   "options": "Car Repair Images",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-10 15:45:24.110892",
+ "modified": "2025-10-16 14:31:13.335524",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Diagnosis",
