@@ -11,13 +11,14 @@
   {
    "fieldname": "model",
    "fieldtype": "Data",
-   "label": "Model"
+   "label": "Model",
+   "unique": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-23 14:35:10.706942",
+ "modified": "2025-10-23 17:40:23.757974",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Vehicle Model",
@@ -37,6 +38,7 @@
   }
  ],
  "row_format": "Dynamic",
+ "search_fields": "model",
  "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",

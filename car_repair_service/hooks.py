@@ -258,16 +258,45 @@ permission_query_conditions = {
 
 
 
+# doc_events = {
+#     "Quotation": {
+#         "after_insert": "car_repair_service.api.quotation_mail.send_quotation_created_email",
+#         "on_update": "car_repair_service.api.quotation_mail.send_quotation_update_email",
+#         "after_insert": "car_repair_service.api.padte.log_doc_created",
+#         "on_update": "car_repair_service.api.padte.log_doc_updated",
+#         "on_submit": "car_repair_service.api.padte.log_doc_submitted",
+#         "on_cancel": "car_repair_service.api.padte.log_doc_cancelled",
+#     },
+#      "Car Repair Request": {
+#         "after_insert": "car_repair_service.api.padte.log_doc_created",
+#         "on_update": "car_repair_service.api.padte.log_doc_updated",
+#     },
+#     "Car Diagnosis": {
+#         "after_insert": "car_repair_service.api.padte.log_doc_created",
+#         "on_update": "car_repair_service.api.padte.log_doc_updated",
+#     },
+#     "Car Repair": {
+#         "after_insert": "car_repair_service.api.padte.log_doc_created",
+#         "on_update": "car_repair_service.api.padte.log_doc_updated",
+#     }
+    
+# }
+
+
 doc_events = {
     "Quotation": {
-        "after_insert": "car_repair_service.api.quotation_mail.send_quotation_created_email",
-        "on_update": "car_repair_service.api.quotation_mail.send_quotation_update_email",
-        "after_insert": "car_repair_service.api.padte.log_doc_created",
-        "on_update": "car_repair_service.api.padte.log_doc_updated",
+        "after_insert": [
+            "car_repair_service.api.quotation_mail.send_quotation_created_email",
+            "car_repair_service.api.padte.log_doc_created",
+        ],
+        "on_update": [
+            "car_repair_service.api.quotation_mail.send_quotation_update_email",
+            "car_repair_service.api.padte.log_doc_updated",
+        ],
         "on_submit": "car_repair_service.api.padte.log_doc_submitted",
         "on_cancel": "car_repair_service.api.padte.log_doc_cancelled",
     },
-     "Car Repair Request": {
+    "Car Repair Request": {
         "after_insert": "car_repair_service.api.padte.log_doc_created",
         "on_update": "car_repair_service.api.padte.log_doc_updated",
     },
@@ -275,11 +304,10 @@ doc_events = {
         "after_insert": "car_repair_service.api.padte.log_doc_created",
         "on_update": "car_repair_service.api.padte.log_doc_updated",
     },
-    "Car Repair": {
+    "Car repair": {
         "after_insert": "car_repair_service.api.padte.log_doc_created",
         "on_update": "car_repair_service.api.padte.log_doc_updated",
     }
-    
 }
 
 fixtures = [

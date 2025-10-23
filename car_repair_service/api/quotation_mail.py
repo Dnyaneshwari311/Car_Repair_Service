@@ -151,6 +151,8 @@
 
 import frappe
 from frappe.utils import get_url
+from frappe import _
+
 
 def send_quotation_created_email(doc, method):
     """Send email when a new quotation is created"""
