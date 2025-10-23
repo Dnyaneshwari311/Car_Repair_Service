@@ -22,6 +22,7 @@
   "repair_request_date",
   "vehicle_pick_up",
   "pick_up_address",
+  "customer_signature",
   "car_repair_images",
   "remark"
  ],
@@ -129,6 +130,12 @@
    "fieldtype": "Data",
    "label": "Pick Up Address",
    "read_only": 1
+  },
+  {
+   "fieldname": "customer_signature",
+   "fieldtype": "Signature",
+   "in_list_view": 1,
+   "label": "Customer Signature"
   }
  ],
  "grid_page_length": 50,
@@ -139,7 +146,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2025-10-16 13:51:36.339232",
+ "modified": "2025-10-17 09:59:20.999575",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",

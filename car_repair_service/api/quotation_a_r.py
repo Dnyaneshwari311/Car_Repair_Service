@@ -292,7 +292,7 @@ def approve_quotation(quotation):
 
 
 
-# # padte.py
+
 # import frappe
 # from frappe.utils import now_datetime
 # from frappe import _

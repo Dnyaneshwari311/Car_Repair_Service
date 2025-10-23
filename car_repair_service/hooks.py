@@ -298,7 +298,8 @@ fixtures = [
                 "Remove Spaces From Field",
                 "Vehicle Pick Up Check Car Repair Images should be Manadatory",
                 "Vehicle Pick Up Address Disply Bydefault",
-                "Remove Spaces From Vehicle Doc"
+                "Remove Spaces From Vehicle Doc",
+                "image preview"
 
 
 
