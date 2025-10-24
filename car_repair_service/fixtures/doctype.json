@@ -1843,7 +1843,7 @@
   "max_attachments": 0,
   "menu_index": null,
   "migration_hash": "e3e7d36d67e0008b8d0ed8483bbc3568",
-  "modified": "2025-10-23 14:27:03.985512",
+  "modified": "2025-10-23 17:23:56.546441",
   "module": "Setup",
   "name": "Vehicle",
   "naming_rule": "By fieldname",
