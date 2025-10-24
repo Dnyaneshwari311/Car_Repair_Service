@@ -1,0 +1,56 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_content %}
+<div style="font-family: Arial, sans-serif; max-width:900px; margin:40px auto;">
+  <div style="border:1px solid #e0e0e0; padding:24px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); background:#fff;">
+    
+    <h1 style="margin-bottom:10px;">Quotation: {{ quotation.name }}</h1>
+    <p><strong>Customer:</strong> {{ quotation.customer or quotation.customer_name or '' }}</p>
+    <p><strong>Date:</strong> {{ quotation.transaction_date }}</p>
+    <p><strong>Valid Till:</strong> {{ quotation.valid_till }}</p>
+
+    <h3 style="margin-top:20px;">Items</h3>
+    <table style="width:100%; border-collapse:collapse; border:1px solid #d0d0d0;">
+      <thead style="background:#f7f7f7;">
+        <tr>
+          <th style="padding:8px; border:1px solid #ddd;">Item</th>
+          <th style="padding:8px; border:1px solid #ddd;">Description</th>
+          <th style="padding:8px; border:1px solid #ddd;">Qty</th>
+          <th style="padding:8px; border:1px solid #ddd;">Rate</th>
+          <th style="padding:8px; border:1px solid #ddd;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+        <tr>
+          <td style="padding:8px; border:1px solid #ddd;">{{ it.item_name }}</td>
+          <td style="padding:8px; border:1px solid #ddd;">{{ it.description }}</td>
+          <td style="padding:8px; border:1px solid #ddd;">{{ it.qty }}</td>
+          <td style="padding:8px; border:1px solid #ddd;">{{ it.rate }}</td>
+          <td style="padding:8px; border:1px solid #ddd;">{{ it.amount }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p style="text-align:right; margin-top:12px; font-weight:bold;">
+      Total: {{ quotation.grand_total }}
+    </p>
+
+    <div style="text-align:center; margin-top:20px;">
+      <a href="{{ approve_url }}" style="display:inline-block; padding:12px 20px; background:#2e7d32; color:#fff; text-decoration:none; border-radius:6px; margin-right:12px;">
+        ✅ Approve
+      </a>
+      <a href="{{ reject_url }}" style="display:inline-block; padding:12px 20px; background:#c62828; color:#fff; text-decoration:none; border-radius:6px;">
+        ❌ Reject
+      </a>
+    </div>
+
+    <p style="color:#777; font-size:13px; margin-top:18px;">
+      If links do not work, please contact your service provider.
+    </p>
+  </div>
+</div>
+{% endblock %}
