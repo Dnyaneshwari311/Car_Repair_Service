@@ -313,6 +313,15 @@ doc_events = {
 fixtures = [
     
     {
+        "dt": "Custom Field",
+        "filters": [
+            ["dt", "in", [
+                 "Quotation"
+            ]]
+        ]
+    },
+    
+    {
         "dt": "Client Script",
         "filters": [
             ["name", "in", [
