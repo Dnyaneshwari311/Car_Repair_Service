@@ -12,7 +12,6 @@
   "column_break_drvv",
   "phone",
   "status",
-  "car_diagnosis",
   "car_repair_details_section",
   "car",
   "license_plate",
@@ -110,19 +109,12 @@
    "fieldname": "remark",
    "fieldtype": "Long Text",
    "label": "Remark"
-  },
-  {
-   "fieldname": "car_diagnosis",
-   "fieldtype": "Link",
-   "label": "Car Diagnosis",
-   "options": "Car Diagnosis",
-   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-29 13:45:04.698744",
+ "modified": "2025-10-29 14:10:28.917725",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car repair",
