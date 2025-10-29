@@ -311,16 +311,15 @@ doc_events = {
 }
 
 fixtures = [
-    
+    # 1️⃣ Export Quotation Custom Fields first
     {
         "dt": "Custom Field",
         "filters": [
-            ["dt", "in", [
-                 "Quotation"
-            ]]
+            ["dt", "in", ["Quotation"]]
         ]
     },
-    
+
+    # 2️⃣ Client Scripts
     {
         "dt": "Client Script",
         "filters": [
@@ -328,7 +327,7 @@ fixtures = [
                 "Car Repair Request After Create Diagnosis",
                 "Create Sales Invoice After Car Repair",
                 "Create Quatation On Dignosis",
-                "Car Repair Status Should Be Mark As Completed",   
+                "Car Repair Status Should Be Mark As Completed",
                 "Item Maintain Stock Always Check Read Only",
                 "Map Item Naming Series",
                 "Item Name Blank",
@@ -337,18 +336,14 @@ fixtures = [
                 "Vehicle Pick Up Address Disply Bydefault",
                 "Remove Spaces From Vehicle Doc",
                 "image preview"
-
-
-
-
-                
             ]]
         ]
     },
-	{
+
+    # 3️⃣ Server Scripts
+    {
         "dt": "Server Script",
         "filters": [
-
             ["name", "in", [
                 "Car Repair Request Welcome Email To Customer",
                 "Car Request Get Creaed Customer Getting Created In System",
@@ -357,47 +352,48 @@ fixtures = [
                 "Add Car Repair Request Reference No To Car Repair",
                 "Add Car Repair Reference No To Car Diagnosis",
                 "Quotation Approved Timstamp"
-
-
-                
-                
             ]]
-		]
-          
+        ]
     },
- 
-     {
+
+    # 4️⃣ Workflows (after Quotation exists)
+    {
+        "dt": "Workflow",
+        "filters": [["name", "in", [
+            "Workflow for Quotation",
+            "Workflow for Sales Invoice"
+        ]]]
+    },
+
+    # 5️⃣ Website settings
+    {
         "doctype": "Website Settings"
-       
     },
-     {
+
+    # 6️⃣ Workspaces
+    {
         "dt": "Workspace",
         "filters": [
             ["name", "=", "Car Repair Service"]
         ]
     },
-    {
-    "dt": "Workflow",
-    "filters": [["name", "in", [
-        "Workflow for Quotation",
-        "Workflow for Sales Invoice"
-    ]]]
-    },
 
- {
+    # 7️⃣ Core doctypes modified (keep at bottom)
+    {
         "dt": "DocType",
         "filters": [
-            ["name", "in", ["Item",
-                            "Sales Invoice",
-                            "Sales Invoice Item",
-                            "Vehicle",
-                            
+            ["name", "in", [
+                "Item",
+                "Sales Invoice",
+                "Sales Invoice Item",
+                "Vehicle"
             ]]
         ]
     },
- 
-  {
-        "doctype": "Report",
+
+    # 8️⃣ Reports
+    {
+        "dt": "Report",
         "filters": [
             ["name", "in", ["Car Repair History Log Report"]]
         ]

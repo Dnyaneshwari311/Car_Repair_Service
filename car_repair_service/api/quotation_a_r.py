@@ -114,10 +114,10 @@ def approve_quotation(quotation):
     current_user = frappe.session.user if frappe.session.user != "Guest" else None
     roles = frappe.get_roles(current_user) if current_user else []
 
-    if "Customer" in roles and not q.customer_approved_on:
-        frappe.db.set_value("Quotation", quotation, "customer_approved_on", now_datetime())
+    if "Customer" in roles and not q.custom_customer_approved_on:
+        frappe.db.set_value("Quotation", quotation, "custom_customer_approved_on", now_datetime())
     elif "Service Provider" in roles and not q.service_provider_approved_on:
-        frappe.db.set_value("Quotation", quotation, "service_provider_approved_on", now_datetime())
+        frappe.db.set_value("Quotation", quotation, "custom_service_provider_approved_on", now_datetime())
 
     frappe.db.commit()
 
@@ -154,10 +154,10 @@ def reject_quotation(quotation):
     current_user = frappe.session.user if frappe.session.user != "Guest" else None
     roles = frappe.get_roles(current_user) if current_user else []
 
-    if "Customer" in roles and not q.customer_rejected_on:
-        frappe.db.set_value("Quotation", quotation, "customer_rejected_on", now_datetime())
+    if "Customer" in roles and not q.custom_customer_rejected_on:
+        frappe.db.set_value("Quotation", quotation, "custom_customer_rejected_on", now_datetime())
     elif "Service Provider" in roles and not q.service_provider_rejected_on:
-        frappe.db.set_value("Quotation", quotation, "service_provider_rejected_on", now_datetime())
+        frappe.db.set_value("Quotation", quotation, "custom_service_provider_rejected_on", now_datetime())
 
     frappe.db.commit()
 
