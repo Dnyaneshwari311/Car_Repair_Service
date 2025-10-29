@@ -376,20 +376,13 @@ fixtures = [
             ["name", "=", "Car Repair Service"]
         ]
     },
-    
-#    {
-#     "dt": "Workflow",
-#     "filters": [["name", "in", [
-#         "Workflow for Quatation",
-#         "Workflow For Sales invoice"]]]
-#    },
-{
+    {
     "dt": "Workflow",
     "filters": [["name", "in", [
         "Workflow for Quotation",
         "Workflow for Sales Invoice"
     ]]]
-},
+    },
 
  {
         "dt": "DocType",
@@ -398,7 +391,7 @@ fixtures = [
                             "Sales Invoice",
                             "Sales Invoice Item",
                             "Vehicle",
-                            "Quotation"
+                            
             ]]
         ]
     },
