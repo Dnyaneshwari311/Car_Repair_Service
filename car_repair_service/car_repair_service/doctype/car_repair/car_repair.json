@@ -13,6 +13,7 @@
   "phone",
   "status",
   "car_diagnosis",
+  "quotation",
   "car_repair_details_section",
   "car",
   "license_plate",
@@ -116,12 +117,18 @@
    "fieldtype": "Link",
    "label": "Car Diagnosis",
    "options": "Car Diagnosis"
+  },
+  {
+   "fieldname": "quotation",
+   "fieldtype": "Link",
+   "label": "Quotation",
+   "options": "Quotation"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-29 14:37:55.012364",
+ "modified": "2025-10-29 19:13:41.168081",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car repair",
