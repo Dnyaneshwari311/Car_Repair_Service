@@ -2,6 +2,50 @@
  {
   "docstatus": 0,
   "doctype": "Client Script",
+  "dt": "Car Repair Request",
+  "enabled": 1,
+  "modified": "2025-10-24 18:03:10.639527",
+  "module": null,
+  "name": "Model name",
+  "script": "frappe.ui.form.on('Car Repair Request', {\n    refresh: function(frm) {\n        // Formatter to show Vehicle Model name in Car dropdown\n        frappe.form.link_formatters['Vehicle'] = function(value, doc) {\n            if (doc.model) {\n                return doc.model; // Display the model name\n            }\n            return value; // fallback\n        };\n    }\n});\n",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Car Repair Request",
+  "enabled": 1,
+  "modified": "2025-10-31 12:41:19.925113",
+  "module": null,
+  "name": "Filter Car According To Model",
+  "script": "frappe.ui.form.on('Car Repair Request', {\n    // Trigger when model field changes\n    model: function(frm) {\n        // Refresh car field query when model changes\n        frm.set_query('car', function() {\n            if (!frm.doc.model) {\n                return {}; // no filter if model is empty\n            }\n\n            return {\n                filters: {\n                    model: frm.doc.model // filter car field where Vehicle's model matches selected model\n                }\n            };\n        });\n    },\n\n    // Also make sure the filter applies on form load\n    onload: function(frm) {\n        frm.set_query('car', function() {\n            if (!frm.doc.model) return {};\n            return {\n                filters: {\n                    model: frm.doc.model\n                }\n            };\n        });\n    }\n});\n\n\n\n// frappe.ui.form.on('Car Repair Request', {\n//     model: function(frm) {\n//         set_car_filter(frm);\n//     },\n\n//     onload: function(frm) {\n//         set_car_filter(frm);\n//     },\n\n//     car: function(frm) {\n//         if (frm.doc.car) {\n//             // Fetch and display model name visually in the field\n//             frappe.db.get_value(\"Vehicle\", frm.doc.car, \"model\", (r) => {\n//                 if (r && r.model) {\n//                     frappe.db.get_value(\"Vehicle Model\", r.model, \"model\", (res) => {\n//                         if (res && res.model) {\n//                             // Update visible value (visual only, not saved)\n//                             frm.fields_dict.car.$input.val(`${frm.doc.car} - ${res.model}`);\n//                         }\n//                     });\n//                 }\n//             });\n//         }\n//     }\n// });\n\n// // Helper function for filtering cars\n// function set_car_filter(frm) {\n//     frm.set_query('car', function() {\n//         if (!frm.doc.model) return {};\n\n//         return {\n//             // 👇 Specify which DocType to search\n//             doctype: 'Vehicle',\n\n//             // 👇 Apply the model filter\n//             filters: {\n//                 model: frm.doc.model\n//             }\n//         };\n//     });\n// }\n",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Book Appointment",
+  "enabled": 1,
+  "modified": "2025-10-30 15:57:22.754193",
+  "module": null,
+  "name": "Book Appointement Vehicle Pickup",
+  "script": "frappe.ui.form.on('Book Appointment', {\n    vehicle_pickup_required: function(frm) {\n        if (frm.doc.vehicle_pickup_required === 'Yes, Pickup my vehicle') {\n            frm.toggle_display('pickup_address', true);\n            frm.set_df_property('pickup_address', 'reqd', 1);\n        } else {\n            frm.toggle_display('pickup_address', false);\n            frm.set_df_property('pickup_address', 'reqd', 0);\n            frm.set_value('pickup_address', '');\n        }\n    },\n    \n    refresh: function(frm) {\n        // Initially hide pickup address if not required\n        if (frm.doc.vehicle_pickup_required !== 'Yes, Pickup my vehicle') {\n            frm.toggle_display('pickup_address', false);\n        }\n    }\n});",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Book Appointment",
+  "enabled": 1,
+  "modified": "2025-10-30 19:12:41.262912",
+  "module": null,
+  "name": "Create Car Repair Request From Book Appointement",
+  "script": "frappe.ui.form.on(\"Book Appointment\", {\n    refresh(frm) {\n        if (!frm.is_new()) {\n            frm.add_custom_button(\"Create Car Repair Request\", function() {\n                frappe.call({\n                    method: \"car_repair_service.api.appointment_api.create_car_repair_request\",\n                    args: { appointment_name: frm.doc.name },\n                    callback: function(r) {\n                        if (r.message) {\n                            frappe.set_route(\"Form\", \"Car Repair Request\", r.message);\n                        }\n                    }\n                });\n            });\n        }\n    }\n});\n",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
   "dt": "Car repair",
   "enabled": 1,
   "modified": "2025-10-08 19:05:07.632143",

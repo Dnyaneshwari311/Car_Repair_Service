@@ -104,13 +104,13 @@
   "doctype_event": "Before Insert",
   "enable_rate_limit": 0,
   "event_frequency": "All",
-  "modified": "2025-10-10 12:55:06.665995",
+  "modified": "2025-10-30 16:31:05.944000",
   "module": null,
   "name": "Add Car Repair Request Reference No To Car Repair",
   "rate_limit_count": 5,
   "rate_limit_seconds": 86400,
   "reference_doctype": "Car repair",
-  "script": "# Auto-fill Reference No from linked Car Repair Request\nif doc.car_repair_request and not doc.reference_no:\n    doc.reference_no = doc.car_repair_request\n",
+  "script": "# Auto-fill Reference No from linked Car Repair Request\nif doc.car_repair_request and not doc.reference_no:\n    doc.reference_no = doc.car_repair_request",
   "script_type": "DocType Event"
  },
  {

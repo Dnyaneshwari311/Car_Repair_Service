@@ -1,7 +1,6 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "field:model",
  "creation": "2025-10-18 18:18:51.853613",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -19,11 +18,10 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-24 16:41:27.621718",
+ "modified": "2025-10-30 11:36:42.040476",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Vehicle Model",
- "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

@@ -11,22 +11,28 @@
   "phone",
   "make",
   "model",
+  "appointment",
   "column_break_ovte",
   "car_model",
   "car",
   "license_plate",
   "chassis_no",
+  "car_manufacturing_year",
+  "priority",
   "section_break_d9fn",
   "reason_for_repair",
-  "car_manufacturing_year",
+  "section_break_3gho",
   "service_type",
-  "priority",
   "repair_request_date",
+  "driver_name",
+  "driver_mob_no",
+  "odometer_value",
   "vehicle_pick_up",
   "pick_up_address",
   "customer_signature",
   "car_repair_images",
-  "remark"
+  "remark",
+  "fuel_type"
  ],
  "fields": [
   {
@@ -140,16 +146,48 @@
    "label": "Customer Signature"
   },
   {
+   "fetch_from": "car.make",
    "fieldname": "make",
-   "fieldtype": "Link",
-   "label": "Make",
-   "options": "Vehicle Make"
+   "fieldtype": "Data",
+   "label": "Make"
   },
   {
+   "fetch_from": "car.model",
    "fieldname": "model",
+   "fieldtype": "Data",
+   "label": "Model"
+  },
+  {
+   "fieldname": "section_break_3gho",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "driver_name",
+   "fieldtype": "Data",
+   "label": "Driver Name"
+  },
+  {
+   "fieldname": "driver_mob_no",
+   "fieldtype": "Data",
+   "label": "Driver Mob No"
+  },
+  {
+   "fieldname": "odometer_value",
+   "fieldtype": "Int",
+   "label": "Odometer Value (Last)"
+  },
+  {
+   "fieldname": "fuel_type",
+   "fieldtype": "Select",
+   "label": "Fuel Type",
+   "options": "Petrol\nDiesel\nNatural Gas\nElectric"
+  },
+  {
+   "fieldname": "appointment",
    "fieldtype": "Link",
-   "label": "Model",
-   "options": "Vehicle Model"
+   "hidden": 1,
+   "label": "Appointment",
+   "options": "Book Appointment"
   }
  ],
  "grid_page_length": 50,
@@ -160,7 +198,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2025-10-24 17:41:17.800592",
+ "modified": "2025-10-31 11:45:38.716716",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",

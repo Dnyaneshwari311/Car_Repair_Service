@@ -317,6 +317,223 @@
 
 
 
+# ------------------------correct working code forcreate repair and update repair-----------------------
+
+
+
+# import frappe
+# from frappe import _
+# from frappe.utils import now_datetime, get_url
+
+# # -------------------------
+# # Approve Quotation
+# # -------------------------
+# @frappe.whitelist(allow_guest=True)
+# def approve_quotation(quotation):
+#     """Approve quotation and always create/update Car Repair after approval"""
+
+#     q = frappe.get_doc("Quotation", quotation)
+
+#     # ✅ Only set workflow state if NOT already approved
+#     if q.get("workflow_state") != "Approved":
+#         frappe.db.set_value("Quotation", quotation, "workflow_state", "Approved")
+
+#     # ✅ Reload the quotation after update
+#     q = frappe.get_doc("Quotation", quotation)
+
+#     # Step 2: Track approval timestamps by role
+#     current_user = frappe.session.user if frappe.session.user != "Guest" else None
+#     roles = frappe.get_roles(current_user) if current_user else []
+
+#     if "Customer" in roles and not q.get("custom_customer_approved_on"):
+#         frappe.db.set_value("Quotation", quotation, "custom_customer_approved_on", now_datetime())
+#     elif "Service Provider" in roles and not q.get("custom_service_provider_approved_on"):
+#         frappe.db.set_value("Quotation", quotation, "custom_service_provider_approved_on", now_datetime())
+
+#     frappe.db.commit()
+
+#     # ✅ Step 3: Always CREATE or UPDATE Car Repair (quotation-based)
+#     create_or_update_car_repair(q)
+
+#     # Step 4: HTML Response
+#     title = q.get("title") or q.name
+#     html = f"""
+#     <html>
+#     <head><title>Quotation Approved</title></head>
+#     <body style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px;">
+#         <h2 style="color: green;">Quotation "{title}" Approved ✅</h2>
+#         <p>Thank you! Your response has been recorded successfully.</p>
+#     </body>
+#     </html>
+#     """
+#     return frappe.utils.response.Response(html, status=200, mimetype="text/html")
+
+
+# # -------------------------
+# # Reject Quotation
+# # -------------------------
+# @frappe.whitelist(allow_guest=True)
+# def reject_quotation(quotation):
+#     """Reject quotation and track rejection timestamps by role"""
+
+#     frappe.db.set_value("Quotation", quotation, "workflow_state", "Rejected")
+#     q = frappe.get_doc("Quotation", quotation)
+
+#     current_user = frappe.session.user if frappe.session.user != "Guest" else None
+#     roles = frappe.get_roles(current_user) if current_user else []
+
+#     if "Customer" in roles and not q.get("custom_customer_rejected_on"):
+#         frappe.db.set_value("Quotation", quotation, "custom_customer_rejected_on", now_datetime())
+#     elif "Service Provider" in roles and not q.get("custom_service_provider_rejected_on"):
+#         frappe.db.set_value("Quotation", quotation, "custom_service_provider_rejected_on", now_datetime())
+
+#     frappe.db.commit()
+
+#     title = q.get("title") or q.name
+#     html = f"""
+#     <html>
+#     <head><title>Quotation Rejected</title></head>
+#     <body style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px;">
+#         <h2 style="color: red;">Quotation "{title}" Rejected ❌</h2>
+#         <p>Your response has been recorded successfully.</p>
+#     </body>
+#     </html>
+#     """
+#     return frappe.utils.response.Response(html, status=200, mimetype="text/html")
+
+
+# # -------------------------
+# # Helper: Create OR Update Car Repair
+# # -------------------------
+# def create_or_update_car_repair(q):
+#     """Create or Update Car Repair from a Quotation."""
+
+#     car_diagnosis_id = q.get("custom_car_diagnosis")
+#     if not car_diagnosis_id:
+#         return None
+
+#     # Get Car Diagnosis
+#     try:
+#         diagnosis = frappe.get_doc("Car Diagnosis", car_diagnosis_id)
+#     except Exception:
+#         return None
+
+#     # Find existing Car Repair linked to this quotation
+#     existing_repair_name = frappe.db.get_value("Car repair", {"quotation": q.name})
+#     if not existing_repair_name:
+#         existing_repair_name = frappe.db.get_value("Car repair", {"car_diagnosis": diagnosis.name})
+
+#     # Vehicle info
+#     vehicle = None
+#     if diagnosis.get("car"):
+#         try:
+#             vehicle = frappe.get_doc("Vehicle", diagnosis.car)
+#         except Exception:
+#             vehicle = None
+
+#     # Quotation details
+#     customer_name = (
+#         q.get("customer")
+#         or q.get("party_name")
+#         or q.get("customer_name")
+#         or diagnosis.get("customer_name")
+#     )
+#     email = q.get("contact_email") or diagnosis.get("email_id")
+#     phone = q.get("contact_no") or q.get("contact_mobile") or diagnosis.get("phone")
+
+#     # Prepare child items (list_of_damage)
+#     quotation_items = q.get("items") or []
+#     child_rows = []
+#     for qi in quotation_items:
+#         qi = qi.as_dict() if hasattr(qi, "as_dict") else dict(qi)
+#         child_rows.append({
+#             "damage_description": qi.get("description") or qi.get("item_name") or "",
+#             "assigned_to": qi.get("assigned_to") or "",
+#             "part_required": qi.get("item_code") or qi.get("item_name") or "",
+#             "estimated_cost": qi.get("amount") or qi.get("rate") or 0
+#         })
+
+#     # -------------------------------------------------------------
+#     # UPDATE EXISTING CAR REPAIR
+#     # -------------------------------------------------------------
+#     if existing_repair_name:
+#         repair = frappe.get_doc("Car repair", existing_repair_name)
+
+#         repair.car_diagnosis = diagnosis.name
+#         repair.car = diagnosis.get("car")
+#         repair.model = vehicle.model if vehicle else ""
+#         repair.license_plate = vehicle.license_plate if vehicle else ""
+#         repair.customer_name = customer_name
+#         repair.email = email
+#         repair.phone = phone
+#         repair.quotation = q.name
+#         repair.reference_no = diagnosis.get("reference_no")
+
+#         # ✅ Replace list_of_damage completely based on current quotation items
+#         repair.set("list_of_damage", [])
+#         for row in child_rows:
+#             repair.append("list_of_damage", row)
+
+#         # ✅ Update total
+#         repair.estimated_total = (
+#             q.get("grand_total")
+#             or q.get("rounded_total")
+#             or q.get("net_total")
+#             or q.get("total")
+#             or 0
+#         )
+
+#         repair.save(ignore_permissions=True)
+#         frappe.db.commit()
+#         return repair.name
+
+#     # -------------------------------------------------------------
+#     # CREATE NEW CAR REPAIR
+#     # -------------------------------------------------------------
+#     new_repair_data = {
+#         "doctype": "Car repair",
+#         "car_diagnosis": diagnosis.name,
+#         "car": diagnosis.get("car"),
+#         "model": vehicle.model if vehicle else "",
+#         "license_plate": vehicle.license_plate if vehicle else "",
+#         "customer_name": customer_name,
+#         "email": email,
+#         "phone": phone,
+#         "quotation": q.name,
+#         "reference_no": diagnosis.get("reference_no"),
+#         "list_of_damage": []
+#     }
+
+#     repair = frappe.get_doc(new_repair_data)
+
+#     for row in child_rows:
+#         repair.append("list_of_damage", row)
+
+#     repair.estimated_total = (
+#         q.get("grand_total")
+#         or q.get("rounded_total")
+#         or q.get("net_total")
+#         or q.get("total")
+#         or 0
+#     )
+
+#     repair.insert(ignore_permissions=True)
+#     frappe.db.commit()
+#     return repair.name
+
+
+# # -------------------------
+# # Quotation Update Hook (Auto-sync Car Repair)
+# # -------------------------
+# def on_update(doc, method):
+#     """Triggered when a Quotation is updated — auto sync Car Repair."""
+#     try:
+#         if doc.workflow_state == "Approved":
+#             create_or_update_car_repair(doc)
+#     except Exception as e:
+#         frappe.log_error(f"Car Repair auto-sync failed: {str(e)}", "Quotation Update Hook")
+
+
 
 import frappe
 from frappe import _
@@ -450,11 +667,18 @@ def create_or_update_car_repair(q):
             "estimated_cost": qi.get("amount") or qi.get("rate") or 0
         })
 
+    # ✅ COMMON FIELDS from Car Diagnosis
+    delivery_date = diagnosis.get("estimated_delivery_date")
+    delivery_time = diagnosis.get("estimated_delivery_time")
+
     # -------------------------------------------------------------
     # UPDATE EXISTING CAR REPAIR
     # -------------------------------------------------------------
     if existing_repair_name:
         repair = frappe.get_doc("Car repair", existing_repair_name)
+
+        # ✅ DO NOT overwrite existing signature
+        existing_signature = repair.get("customer_signature")
 
         repair.car_diagnosis = diagnosis.name
         repair.car = diagnosis.get("car")
@@ -464,13 +688,20 @@ def create_or_update_car_repair(q):
         repair.email = email
         repair.phone = phone
         repair.quotation = q.name
+        repair.reference_no = diagnosis.get("reference_no")
+
+        repair.estimated_delivery_date = delivery_date
+        repair.estimated_delivery_time = delivery_time
+
+        # ✅ Restore signature if already signed
+        if existing_signature:
+            repair.customer_signature = existing_signature
 
         # ✅ Replace list_of_damage completely based on current quotation items
         repair.set("list_of_damage", [])
         for row in child_rows:
             repair.append("list_of_damage", row)
 
-        # ✅ Update total
         repair.estimated_total = (
             q.get("grand_total")
             or q.get("rounded_total")
@@ -496,6 +727,9 @@ def create_or_update_car_repair(q):
         "email": email,
         "phone": phone,
         "quotation": q.name,
+        "reference_no": diagnosis.get("reference_no"),
+        "estimated_delivery_date": delivery_date,
+        "estimated_delivery_time": delivery_time,
         "list_of_damage": []
     }
 
@@ -527,8 +761,6 @@ def on_update(doc, method):
             create_or_update_car_repair(doc)
     except Exception as e:
         frappe.log_error(f"Car Repair auto-sync failed: {str(e)}", "Quotation Update Hook")
-
-
 
 # import frappe
 # from frappe.utils import now_datetime

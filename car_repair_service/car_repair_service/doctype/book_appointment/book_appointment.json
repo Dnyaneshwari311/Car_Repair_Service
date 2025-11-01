@@ -1,0 +1,121 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-10-30 15:28:48.171772",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "customer_name",
+  "email",
+  "phone",
+  "make",
+  "model",
+  "column_break_pbnt",
+  "license_plate",
+  "service_type",
+  "appointment_date",
+  "appointment_time",
+  "vehicle_pickup_required",
+  "section_break_ke0t",
+  "pickup_address",
+  "reason_for_repair"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "fieldname": "make",
+   "fieldtype": "Data",
+   "label": "Make"
+  },
+  {
+   "fieldname": "model",
+   "fieldtype": "Data",
+   "label": "Model"
+  },
+  {
+   "fieldname": "license_plate",
+   "fieldtype": "Data",
+   "label": "License Plate"
+  },
+  {
+   "fieldname": "service_type",
+   "fieldtype": "Select",
+   "label": "Service Type",
+   "options": "Repair\nRegular Service\nOther"
+  },
+  {
+   "fieldname": "appointment_date",
+   "fieldtype": "Date",
+   "label": "Appointment Date"
+  },
+  {
+   "fieldname": "appointment_time",
+   "fieldtype": "Time",
+   "label": "Appointment Time"
+  },
+  {
+   "fieldname": "column_break_pbnt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "vehicle_pickup_required",
+   "fieldtype": "Select",
+   "label": "Vehicle Pickup Required",
+   "options": "No, I'll bring it\nYes, Pickup my vehicle"
+  },
+  {
+   "fieldname": "section_break_ke0t",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pickup_address",
+   "fieldtype": "Small Text",
+   "label": "Pickup Address"
+  },
+  {
+   "fieldname": "reason_for_repair",
+   "fieldtype": "Small Text",
+   "label": "Reason For Repair"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-10-31 15:50:50.364995",
+ "modified_by": "Administrator",
+ "module": "Car Repair service",
+ "name": "Book Appointment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

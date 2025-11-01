@@ -335,7 +335,13 @@ fixtures = [
                 "Vehicle Pick Up Check Car Repair Images should be Manadatory",
                 "Vehicle Pick Up Address Disply Bydefault",
                 "Remove Spaces From Vehicle Doc",
-                "image preview"
+                "image preview",
+                "Book Appointement Vehicle Pickup",
+                "Create Car Repair Request From Book Appointement",
+                "Model name",
+                "Filter Car According To Model",
+                "Autopopulate MakeAnd Model On The Basis Of Car"
+                
             ]]
         ]
     },
