@@ -27,6 +27,7 @@
   "driver_name",
   "driver_mob_no",
   "odometer_value",
+  "fuel_level",
   "vehicle_pick_up",
   "pick_up_address",
   "customer_signature",
@@ -188,6 +189,12 @@
    "hidden": 1,
    "label": "Appointment",
    "options": "Book Appointment"
+  },
+  {
+   "fieldname": "fuel_level",
+   "fieldtype": "Select",
+   "label": "Fuel Level",
+   "options": "Full\n3/4\nHalf\n1/4\nEmpty"
   }
  ],
  "grid_page_length": 50,
@@ -198,7 +205,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2025-10-31 11:45:38.716716",
+ "modified": "2025-11-01 14:59:39.518236",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",

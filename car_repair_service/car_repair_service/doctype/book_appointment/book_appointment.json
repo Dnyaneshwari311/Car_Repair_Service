@@ -26,7 +26,9 @@
   {
    "fieldname": "customer_name",
    "fieldtype": "Data",
-   "label": "Customer Name"
+   "in_list_view": 1,
+   "label": "Customer Name",
+   "reqd": 1
   },
   {
    "fieldname": "email",
@@ -36,7 +38,9 @@
   {
    "fieldname": "phone",
    "fieldtype": "Data",
-   "label": "Phone"
+   "in_list_view": 1,
+   "label": "Phone",
+   "reqd": 1
   },
   {
    "fieldname": "make",
@@ -51,7 +55,8 @@
   {
    "fieldname": "license_plate",
    "fieldtype": "Data",
-   "label": "License Plate"
+   "label": "License Plate",
+   "reqd": 1
   },
   {
    "fieldname": "service_type",
@@ -107,7 +112,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-01 14:54:03.050247",
+ "modified": "2025-11-01 14:56:29.882794",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Book Appointment",
