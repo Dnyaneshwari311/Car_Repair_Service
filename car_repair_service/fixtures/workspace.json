@@ -1,7 +1,7 @@
 [
  {
   "charts": [],
-  "content": "[{\"id\":\"Wj7z_7de-0\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Car Repair Service</span>\",\"col\":12}},{\"id\":\"y3IQUeOsnf\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Car Repair Request\",\"col\":3}},{\"id\":\"YkH6BRarE8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Car Diagnosis\",\"col\":3}},{\"id\":\"l2SeqTuBcY\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Car Repair\",\"col\":3}}]",
+  "content": "[{\"id\":\"Wj7z_7de-0\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Car Repair Service</span>\",\"col\":12}},{\"id\":\"3kdq9jwk-_\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Book Appointment\",\"col\":3}},{\"id\":\"y3IQUeOsnf\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Car Repair Request\",\"col\":3}},{\"id\":\"YkH6BRarE8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Car Diagnosis\",\"col\":3}},{\"id\":\"l2SeqTuBcY\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Car Repair\",\"col\":3}}]",
   "custom_blocks": [],
   "docstatus": 0,
   "doctype": "Workspace",
@@ -12,7 +12,7 @@
   "is_hidden": 0,
   "label": "Car Repair Service",
   "links": [],
-  "modified": "2025-09-29 14:51:47.502668",
+  "modified": "2025-11-01 13:24:09.779180",
   "module": null,
   "name": "Car Repair Service",
   "number_cards": [],
@@ -23,6 +23,23 @@
   "roles": [],
   "sequence_id": 2.0,
   "shortcuts": [
+   {
+    "color": "Grey",
+    "doc_view": "List",
+    "format": null,
+    "icon": null,
+    "kanban_board": null,
+    "label": "Book Appointment",
+    "link_to": "Book Appointment",
+    "parent": "Car Repair Service",
+    "parentfield": "shortcuts",
+    "parenttype": "Workspace",
+    "report_ref_doctype": null,
+    "restrict_to_domain": null,
+    "stats_filter": "[]",
+    "type": "DocType",
+    "url": null
+   },
    {
     "color": "Grey",
     "doc_view": "List",
