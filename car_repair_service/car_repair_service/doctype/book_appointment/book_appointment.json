@@ -5,11 +5,6 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "section_break_ke0t",
-  "pickup_address",
-  "same_as_pick_up_address",
-  "drop_address",
-  "reason_for_repair",
   "section_break_xnkn",
   "customer_name",
   "email",
@@ -21,7 +16,11 @@
   "service_type",
   "appointment_date",
   "appointment_time",
-  "vehicle_pickup_required"
+  "vehicle_pickup_required",
+  "section_break_ke0t",
+  "pickup_address",
+  "same_as_pick_up_address",
+  "drop_address"
  ],
  "fields": [
   {
@@ -90,11 +89,6 @@
    "label": "Pickup Address"
   },
   {
-   "fieldname": "reason_for_repair",
-   "fieldtype": "Small Text",
-   "label": "Reason For Repair"
-  },
-  {
    "default": "0",
    "fieldname": "same_as_pick_up_address",
    "fieldtype": "Check",
@@ -113,7 +107,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-01 14:37:44.819683",
+ "modified": "2025-11-01 14:54:03.050247",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Book Appointment",
