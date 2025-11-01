@@ -46,6 +46,17 @@
  {
   "docstatus": 0,
   "doctype": "Client Script",
+  "dt": "Car Repair Request",
+  "enabled": 1,
+  "modified": "2025-10-31 15:38:01.770354",
+  "module": null,
+  "name": "Autopopulate  MakeAnd Model On The Basis Of Car",
+  "script": "frappe.ui.form.on(\"Car Repair Request\", {\n    onload(frm) {\n        // Apply filter when form loads\n        set_car_filter(frm);\n\n        // If car already selected, populate fields\n        if (frm.doc.car) frappe.trigger(\"car\", frm);\n    },\n\n    model(frm) {\n        // Refresh car filter when model changes\n        set_car_filter(frm);\n    },\n\n    car(frm) {\n        if (frm.doc.car) {\n            frappe.db.get_doc(\"Vehicle\", frm.doc.car).then(vehicle => {\n                frm.set_value(\"license_plate\", vehicle.license_plate);\n                frm.set_value(\"chassis_no\", vehicle.chassis_no);\n\n                // Get readable make name\n                if (vehicle.make) {\n                    frappe.db.get_value(\"Vehicle Make\", vehicle.make, \"make\", (r) => {\n                        frm.set_value(\"make\", r ? r.make : vehicle.make);\n                    });\n                }\n\n                // Get readable model name\n                if (vehicle.model) {\n                    frappe.db.get_value(\"Vehicle Model\", vehicle.model, \"model\", (r) => {\n                        frm.set_value(\"model\", r ? r.model : vehicle.model);\n                    });\n                }\n\n                // ✅ Show readable value in car field (visually only)\n                let display_name = vehicle.license_plate || vehicle.model || frm.doc.car;\n                frm.fields_dict.car.$input.val(display_name);\n            });\n        }\n    }\n});\n\n// ✅ Proper filter for the Car link field\nfunction set_car_filter(frm) {\n    frm.set_query(\"car\", function() {\n        let filters = {};\n        if (frm.doc.model) filters.model = frm.doc.model;\n        return { filters };\n    });\n}\n\n\n\n",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
   "dt": "Car repair",
   "enabled": 1,
   "modified": "2025-10-08 19:05:07.632143",
