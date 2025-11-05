@@ -11,6 +11,7 @@
   "phone",
   "make",
   "model",
+  "status",
   "column_break_pbnt",
   "license_plate",
   "service_type",
@@ -114,12 +115,18 @@
    "fieldtype": "Link",
    "label": "Assigned To",
    "options": "Employee"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Open\nConfirmed\nComplete\nCancelled"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-03 17:59:44.835963",
+ "modified": "2025-11-05 18:14:16.273296",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Book Appointment",
