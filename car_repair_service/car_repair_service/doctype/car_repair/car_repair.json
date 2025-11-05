@@ -9,6 +9,7 @@
   "customer_name",
   "email",
   "reference_no",
+  "assign_adviser",
   "column_break_drvv",
   "phone",
   "status",
@@ -141,12 +142,19 @@
    "fieldname": "estimated_delivery_time",
    "fieldtype": "Time",
    "label": "Estimated Delivery Time"
+  },
+  {
+   "fieldname": "assign_adviser",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Assign Adviser",
+   "options": "Employee"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-31 19:28:03.393629",
+ "modified": "2025-11-05 11:19:37.637644",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car repair",
