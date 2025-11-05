@@ -11,6 +11,7 @@
   "model",
   "subject",
   "phone",
+  "assign_adviser",
   "column_break_qv1j",
   "mobile",
   "priority",
@@ -155,12 +156,18 @@
    "fieldname": "estimated_delivery_time",
    "fieldtype": "Time",
    "label": "Estimated Delivery Time"
+  },
+  {
+   "fieldname": "assign_adviser",
+   "fieldtype": "Link",
+   "label": "Assign Adviser",
+   "options": "Employee"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-31 19:26:49.271297",
+ "modified": "2025-11-03 12:00:18.908262",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Diagnosis",

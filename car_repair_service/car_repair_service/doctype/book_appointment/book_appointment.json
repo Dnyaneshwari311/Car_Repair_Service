@@ -19,6 +19,7 @@
   "vehicle_pickup_required",
   "section_break_ke0t",
   "pickup_address",
+  "assigned_to",
   "same_as_pick_up_address",
   "drop_address"
  ],
@@ -107,12 +108,18 @@
   {
    "fieldname": "section_break_xnkn",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "assigned_to",
+   "fieldtype": "Link",
+   "label": "Assigned To",
+   "options": "Employee"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-01 14:56:29.882794",
+ "modified": "2025-11-03 17:59:44.835963",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Book Appointment",

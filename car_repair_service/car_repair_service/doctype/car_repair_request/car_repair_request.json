@@ -12,6 +12,7 @@
   "make",
   "model",
   "appointment",
+  "assign_adviser",
   "column_break_ovte",
   "car_model",
   "car",
@@ -38,9 +39,10 @@
  "fields": [
   {
    "fieldname": "customer_name",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Customer Name"
+   "label": "Customer Name",
+   "options": "Customer"
   },
   {
    "fieldname": "phone",
@@ -195,6 +197,12 @@
    "fieldtype": "Select",
    "label": "Fuel Level",
    "options": "Full\n3/4\nHalf\n1/4\nEmpty"
+  },
+  {
+   "fieldname": "assign_adviser",
+   "fieldtype": "Link",
+   "label": "Assign Adviser",
+   "options": "Employee"
   }
  ],
  "grid_page_length": 50,
@@ -205,7 +213,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2025-11-01 14:59:39.518236",
+ "modified": "2025-11-04 18:05:28.575049",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",
