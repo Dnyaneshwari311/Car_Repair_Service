@@ -411,5 +411,11 @@ fixtures = [
         "filters": [
             ["name", "in", ["Car Repair History Log Report"]]
         ]
+    },
+    {
+        "doctype": "Role",
+        "filters": {
+            "name": ["in", ["Assign Advisor"]]
+        }
     }
 ]
