@@ -218,6 +218,89 @@ def create_car_repair_request(data):
 
 
 
+# =======================================================
+# Create Car Diagnosis From Car Repair Request
+# =======================================================
+
+
+@frappe.whitelist(allow_guest=True)
+def create_car_diagnosis(customer_name=None, customer=None):
+    """
+    Create a Car Diagnosis record:
+    - Prefill from last Car Repair Request for this customer
+    """
+    try:
+        if not customer_name and not customer:
+            frappe.throw(_("Please provide either customer_name or customer"))
+
+        # If customer link is provided, fetch customer_name
+        if customer and not customer_name:
+            customer_name = frappe.db.get_value("Customer", customer, "customer_name")
+
+        # Fetch latest Car Repair Request
+        last_request = frappe.get_all(
+            "Car Repair Request",
+            filters={"customer_name": customer_name},
+            fields=[
+                "name", "car", "car_model", "license_plate", "chassis_no",
+                "email", "phone", "repair_request_date", "priority",
+                "vehicle_pick_up", "customer_signature"
+            ],
+            order_by="creation desc",
+            limit_page_length=1
+        )
+
+        if not last_request:
+            return {"status": "not_found", "message": "No Car Repair Request found for this customer"}
+
+        req_name = last_request[0]["name"]
+
+        # Fetch full Car Repair Request including child tables
+        req_doc = frappe.get_doc("Car Repair Request", req_name)
+
+        # Create new Car Diagnosis
+        diagnosis = frappe.new_doc("Car Diagnosis")
+        diagnosis.customer_name = req_doc.customer_name
+
+        # Only assign customer link if it exists
+        if hasattr(req_doc, "customer"):
+            diagnosis.customer = req_doc.customer
+
+        diagnosis.car = req_doc.car
+        diagnosis.model = req_doc.car_model
+        diagnosis.license_plate = req_doc.license_plate
+        diagnosis.chassis_no = req_doc.chassis_no
+        diagnosis.email_id = req_doc.email
+        diagnosis.phone = req_doc.phone
+        diagnosis.date_of_receipt = req_doc.repair_request_date
+        diagnosis.priority = req_doc.priority
+        diagnosis.vehicle_pick_up = req_doc.vehicle_pick_up
+        diagnosis.customer_signature = req_doc.customer_signature
+
+        # Child tables: vehicle_concern
+        if hasattr(req_doc, "vehicle_concern"):
+            for vc in req_doc.vehicle_concern:
+                diagnosis.append("vehicle_concern", {"vehicle_concern": vc.vehicle_concern})
+
+        # Child tables: car_repair_images
+        if hasattr(req_doc, "car_repair_images"):
+            for img in req_doc.car_repair_images:
+                diagnosis.append("car_repair_images", {"image": img.image})
+
+        # Insert document
+        diagnosis.insert(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {
+            "status": "success",
+            "message": f"Car Diagnosis created from Car Repair Request {req_name}",
+            "name": diagnosis.name
+        }
+
+    except Exception as e:
+        frappe.log_error("Error creating Car Diagnosis", str(e))
+        return {"status": "error", "message": str(e)}
+
 
 
 # ====================================================
