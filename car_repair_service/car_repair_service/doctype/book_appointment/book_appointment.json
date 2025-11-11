@@ -22,7 +22,8 @@
   "pickup_address",
   "assigned_to",
   "same_as_pick_up_address",
-  "drop_address"
+  "drop_address",
+  "description"
  ],
  "fields": [
   {
@@ -53,12 +54,6 @@
    "fieldname": "model",
    "fieldtype": "Data",
    "label": "Model"
-  },
-  {
-   "fieldname": "license_plate",
-   "fieldtype": "Data",
-   "label": "License Plate",
-   "reqd": 1
   },
   {
    "fieldname": "service_type",
@@ -121,12 +116,23 @@
    "fieldtype": "Select",
    "label": "Status",
    "options": "Open\nConfirmed\nComplete\nCancelled"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "license_plate",
+   "fieldtype": "Data",
+   "label": "Vehicle Number",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-05 18:14:16.273296",
+ "modified": "2025-11-11 11:26:37.044139",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Book Appointment",

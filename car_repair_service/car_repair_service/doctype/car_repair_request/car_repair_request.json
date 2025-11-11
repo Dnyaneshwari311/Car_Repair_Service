@@ -13,6 +13,7 @@
   "model",
   "appointment",
   "assign_adviser",
+  "odometer_photo",
   "column_break_ovte",
   "car_model",
   "car",
@@ -20,6 +21,7 @@
   "chassis_no",
   "car_manufacturing_year",
   "priority",
+  "vehicle_concern",
   "section_break_d9fn",
   "reason_for_repair",
   "section_break_3gho",
@@ -103,13 +105,14 @@
    "fieldname": "car_repair_images",
    "fieldtype": "Table",
    "label": "Car Repair Images",
-   "options": "Car Repair Images"
+   "options": "Car Repair Images",
+   "reqd": 1
   },
   {
    "fetch_from": "car.license_plate",
    "fieldname": "license_plate",
    "fieldtype": "Data",
-   "label": "License Plate"
+   "label": "Vehicle Number"
   },
   {
    "fieldname": "column_break_ovte",
@@ -203,6 +206,18 @@
    "fieldtype": "Link",
    "label": "Assign Adviser",
    "options": "Employee"
+  },
+  {
+   "fieldname": "vehicle_concern",
+   "fieldtype": "Table",
+   "label": "Vehicle Concern",
+   "options": "Vehicle Concern"
+  },
+  {
+   "fieldname": "odometer_photo",
+   "fieldtype": "Attach Image",
+   "label": "Odometer Photo",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
@@ -213,7 +228,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2025-11-04 18:05:28.575049",
+ "modified": "2025-11-11 11:40:50.644862",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",
