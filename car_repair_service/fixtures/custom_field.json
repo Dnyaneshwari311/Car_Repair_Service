@@ -399,31 +399,32 @@
   "width": null
  },
  {
-        "doctype": "Custom Field",
-        "dt": "User",
-        "fieldname": "otp",
-        "fieldtype": "Int",
-        "label": "OTP",
-        "insert_after": "last_name", 
-        "section": "Forgot",
-        "hidden": 0,
-        "read_only": 0,
-        "reqd": 0,
-        "no_copy": 0,
-        "in_list_view": 0
-    },
-    {
-        "doctype": "Custom Field",
-        "dt": "User",
-        "fieldname": "otp_expire_time",
-        "fieldtype": "Datetime",
-        "label": "OTP Expire Time",
-        "insert_after": "otp",
-        "section": "Forgot",
-        "hidden": 0,
-        "read_only": 0,
-        "reqd": 0,
-        "no_copy": 0,
-        "in_list_view": 0
-    }
+  "doctype": "Custom Field",
+  "dt": "User",
+  "fieldname": "otp",
+  "fieldtype": "Int",
+  "label": "OTP",
+  "insert_after": "last_name",
+  "hidden": 0,
+  "read_only": 0,
+  "reqd": 0,
+  "no_copy": 0,
+  "in_list_view": 0,
+  "name": "User-otp"
+},
+{
+  "doctype": "Custom Field",
+  "dt": "User",
+  "fieldname": "otp_expire_time",
+  "fieldtype": "Datetime",
+  "label": "OTP Expire Time",
+  "insert_after": "otp",
+  "hidden": 0,
+  "read_only": 0,
+  "reqd": 0,
+  "no_copy": 0,
+  "in_list_view": 0,
+  "name": "User-otp_expire_time"
+}
+
 ]
