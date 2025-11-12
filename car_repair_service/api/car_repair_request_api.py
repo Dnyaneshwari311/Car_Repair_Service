@@ -303,6 +303,80 @@ def create_car_diagnosis(customer_name=None, customer=None):
 
 
 
+
+
+
+
+# ======================================================
+# Create Quotation From Car Diagnosis
+# ======================================================
+
+
+@frappe.whitelist(allow_guest=True)
+def create_quotation_from_car_diagnosis(diagnosis_name):
+    """
+    API: Create a Quotation from a Car Diagnosis record.
+    """
+    try:
+        diag = frappe.get_doc("Car Diagnosis", diagnosis_name)
+        if not diag.customer_name:
+            frappe.throw(_("Customer not found in Car Diagnosis"))
+
+        qtn = frappe.new_doc("Quotation")
+        qtn.quotation_to = "Customer"
+        qtn.party_name = diag.customer_name
+        qtn.remarks = f"Quotation based on Car Diagnosis: {diag.name}"
+        qtn.custom_car_diagnosis = diag.name
+
+        if getattr(diag, "email_id", None):
+            qtn.contact_email = diag.email_id
+
+        for d in getattr(diag, "car_diagnosis_detail", []):
+            if getattr(d, "part_required", None):
+                item = frappe.model.add_child(qtn, "items")
+                item.item_code = d.part_required
+                item.item_name = d.part_required
+
+                # Safe qty/rate
+                try:
+                    item.qty = float(d.quantity) if d.quantity not in (None, '', ' ') else 1.0
+                except:
+                    item.qty = 1.0
+
+                try:
+                    item.rate = float(d.estimated_cost) if d.estimated_cost not in (None, '', ' ') else 0.0
+                except:
+                    item.rate = 0.0
+
+                uom = frappe.db.get_value("Item", d.part_required, "stock_uom")
+                if uom:
+                    item.uom = uom
+
+        if getattr(diag, "issues", None) and not getattr(diag, "car_diagnosis_detail", None):
+            child = frappe.model.add_child(qtn, "items")
+            child.item_name = diag.issues
+            child.qty = 1.0
+            child.rate = 0.0
+
+        vehicle_field = "vehicle" if "vehicle" in qtn.as_dict() else "custom_vehicle"
+        if getattr(diag, "car", None):
+            setattr(qtn, vehicle_field, diag.car)
+
+        qtn.insert(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {
+            "status": "success",
+            "message": f"Quotation created from Car Diagnosis {diag.name}",
+            "quotation_name": qtn.name
+        }
+
+    except Exception as e:
+        frappe.log_error(f"Error creating Quotation from Car Diagnosis {diagnosis_name}", str(e))
+        return {"status": "error", "message": str(e)}
+
+
+
 # ====================================================
 # READ / GET Car Repair Request (single or all)
 # ====================================================
