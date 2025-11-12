@@ -7,115 +7,6 @@ import json
 # ====================================================
 
 
-# @frappe.whitelist(allow_guest=True)
-# def create_car_repair_request(data):
-#     """
-#     Create a new Car Repair Request:
-#     - Auto-creates Customer if not exists
-#     - Ensures Vehicle Make/Model exist
-#     - Inserts Car Repair Request record
-#     (Email is handled by after_insert event)
-#     """
-#     try:
-#         data = json.loads(data) if isinstance(data, str) else data
-
-#         # ====================================================
-#         # ✅ Step 1: Auto-create Customer if not exists
-#         # ====================================================
-#         customer_name = data.get("customer_name")
-#         email = data.get("email")
-#         phone = data.get("phone")
-
-#         customer_id = None
-
-#         if email and customer_name:
-#             existing_customer = frappe.db.exists("Customer", {"email_id": email})
-#             if not existing_customer:
-#                 customer = frappe.new_doc("Customer")
-#                 customer.customer_name = customer_name
-#                 customer.email_id = email
-#                 customer.mobile_no = phone
-#                 customer.customer_group = "Individual"
-#                 customer.territory = "All Territories"
-#                 customer.insert(ignore_permissions=True)
-#                 frappe.msgprint(f"✅ Customer {customer.customer_name} created successfully.")
-#                 customer_id = customer.name
-#             else:
-#                 customer_id = existing_customer
-#         else:
-#             frappe.throw("Missing customer_name or email for Customer creation")
-
-#         # ====================================================
-#         # ✅ Step 2: Ensure Vehicle Make & Model exist
-#         # ====================================================
-#         make = data.get("make")
-#         model = data.get("model")
-
-#         if make and not frappe.db.exists("Vehicle Make", {"make": make}):
-#             vehicle_make = frappe.new_doc("Vehicle Make")
-#             vehicle_make.make = make
-#             vehicle_make.insert(ignore_permissions=True)
-#             frappe.msgprint(f"✅ Created new Vehicle Make: {make}")
-
-#         if model and not frappe.db.exists("Vehicle Model", {"model": model}):
-#             vehicle_model = frappe.new_doc("Vehicle Model")
-#             vehicle_model.model = model
-#             vehicle_model.insert(ignore_permissions=True)
-#             frappe.msgprint(f"✅ Created new Vehicle Model: {model}")
-
-#         # ====================================================
-#         # ✅ Step 3: Create Car Repair Request
-#         # ====================================================
-#         frappe.flags.in_create_car_repair_api = True  # helps avoid re-trigger in hooks
-
-#         doc = frappe.new_doc("Car Repair Request")
-#         fields = [
-#             "email", "phone", "make", "model", "assign_adviser",
-#             "car", "license_plate", "chassis_no", "car_manufacturing_year",
-#             "odometer_photo", "priority", "service_type", "repair_request_date",
-#             "driver_name", "driver_mob_no", "odometer_value", "fuel_level",
-#             "vehicle_pick_up", "customer_signature", "remark", "fuel_type"
-#         ]
-
-#         # --- Set all main fields dynamically ---
-#         for f in fields:
-#             if f in data:
-#                 doc.set(f, data[f])
-
-#         # ✅ Link correct Customer name
-#         doc.customer = customer_id
-
-#         # --- Child Table: Vehicle Concerns ---
-#         if "vehicle_concern" in data and isinstance(data["vehicle_concern"], list):
-#             for vc in data["vehicle_concern"]:
-#                 doc.append("vehicle_concern", {"vehicle_concern": vc.get("vehicle_concern")})
-
-#         # --- Child Table: Car Repair Images ---
-#         if "car_repair_images" in data and isinstance(data["car_repair_images"], list):
-#             for img in data["car_repair_images"]:
-#                 doc.append("car_repair_images", {"image": img.get("image")})
-
-#         # --- Save document ---
-#         doc.insert(ignore_permissions=True)
-#         frappe.db.commit()
-
-#         # Email is sent automatically in after_insert hook
-#         return {
-#             "status": "success",
-#             "message": "Car Repair Request created successfully (Customer + Make/Model handled)",
-#             "name": doc.name
-#         }
-
-#     except Exception as e:
-#         frappe.log_error("Create Car Repair Request Error", str(e))
-#         return {"status": "error", "message": str(e)}
-
-
-
-
-
-
-
 @frappe.whitelist(allow_guest=True)
 def create_car_repair_request(data):
     """
@@ -204,10 +95,10 @@ def create_car_repair_request(data):
         # --- Insert document ---
         doc.insert(ignore_permissions=True)
         frappe.db.commit()
-
+        # Email is sent automatically in after_insert hook
         return {
             "status": "success",
-            "message": "Car Repair Request created successfully (Customer + Make/Model handled)",
+            "message": "Car Repair Request created successfully",
             "name": doc.name
         }
 
@@ -228,6 +119,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
     """
     Create a Car Diagnosis record:
     - Prefill from last Car Repair Request for this customer
+    - Auto-fill Reference No from Car Repair Request
     """
     try:
         if not customer_name and not customer:
@@ -277,14 +169,19 @@ def create_car_diagnosis(customer_name=None, customer=None):
         diagnosis.vehicle_pick_up = req_doc.vehicle_pick_up
         diagnosis.customer_signature = req_doc.customer_signature
 
-        # Child tables: vehicle_concern
+        # ✅ Auto-fill Reference No from Car Repair Request
+        if not diagnosis.reference_no and req_doc.name:
+            diagnosis.reference_no = req_doc.name
+
+        # Child table: Vehicle Concern
         if hasattr(req_doc, "vehicle_concern"):
             for vc in req_doc.vehicle_concern:
                 diagnosis.append("vehicle_concern", {"vehicle_concern": vc.vehicle_concern})
 
-        # Child tables: car_repair_images
+        # Child table: Car Repair Images
         if hasattr(req_doc, "car_repair_images"):
             for img in req_doc.car_repair_images:
+              if img.image: 
                 diagnosis.append("car_repair_images", {"image": img.image})
 
         # Insert document
@@ -304,24 +201,25 @@ def create_car_diagnosis(customer_name=None, customer=None):
 
 
 
-
-
-
 # ======================================================
 # Create Quotation From Car Diagnosis
 # ======================================================
+
 
 
 @frappe.whitelist(allow_guest=True)
 def create_quotation_from_car_diagnosis(diagnosis_name):
     """
     API: Create a Quotation from a Car Diagnosis record.
+    Returns the created Quotation name.
     """
     try:
+        # Fetch Car Diagnosis document
         diag = frappe.get_doc("Car Diagnosis", diagnosis_name)
         if not diag.customer_name:
             frappe.throw(_("Customer not found in Car Diagnosis"))
 
+        # Create Quotation
         qtn = frappe.new_doc("Quotation")
         qtn.quotation_to = "Customer"
         qtn.party_name = diag.customer_name
@@ -331,49 +229,68 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
         if getattr(diag, "email_id", None):
             qtn.contact_email = diag.email_id
 
-        for d in getattr(diag, "car_diagnosis_detail", []):
-            if getattr(d, "part_required", None):
-                item = frappe.model.add_child(qtn, "items")
-                item.item_code = d.part_required
-                item.item_name = d.part_required
+        # Add parts from child table
+        if getattr(diag, "car_diagnosis_detail", []):
+            for d in diag.car_diagnosis_detail:
+                if getattr(d, "part_required", None):
+                    # Safely get quantity
+                    qty = 1.0
+                    try:
+                        if d.quantity not in (None, '', ' '):
+                            qty = float(d.quantity)
+                        if qty <= 0:
+                            qty = 1.0
+                    except:
+                        qty = 1.0
 
-                # Safe qty/rate
-                try:
-                    item.qty = float(d.quantity) if d.quantity not in (None, '', ' ') else 1.0
-                except:
-                    item.qty = 1.0
+                    # Safely get rate
+                    rate = 0.0
+                    try:
+                        if d.estimated_cost not in (None, '', ' '):
+                            rate = float(d.estimated_cost)
+                    except:
+                        rate = 0.0
 
-                try:
-                    item.rate = float(d.estimated_cost) if d.estimated_cost not in (None, '', ' ') else 0.0
-                except:
-                    item.rate = 0.0
+                    # Get UOM from Item master
+                    uom = frappe.db.get_value("Item", d.part_required, "stock_uom") or "Nos"
 
-                uom = frappe.db.get_value("Item", d.part_required, "stock_uom")
-                if uom:
-                    item.uom = uom
+                    # Append item
+                    qtn.append("items", {
+                        "item_code": d.part_required,
+                        "item_name": d.part_required,
+                        "qty": qty,
+                        "rate": rate,
+                        "uom": uom
+                    })
 
-        if getattr(diag, "issues", None) and not getattr(diag, "car_diagnosis_detail", None):
-            child = frappe.model.add_child(qtn, "items")
-            child.item_name = diag.issues
-            child.qty = 1.0
-            child.rate = 0.0
+        # If no parts, use issues as fallback item
+        elif getattr(diag, "issues", None):
+            qtn.append("items", {
+                "item_name": diag.issues,
+                "qty": 1.0,
+                "rate": 0.0,
+                "uom": "Nos"
+            })
 
+        # Vehicle info
         vehicle_field = "vehicle" if "vehicle" in qtn.as_dict() else "custom_vehicle"
         if getattr(diag, "car", None):
             setattr(qtn, vehicle_field, diag.car)
 
+        # Insert Quotation
         qtn.insert(ignore_permissions=True)
         frappe.db.commit()
 
         return {
             "status": "success",
-            "message": f"Quotation created from Car Diagnosis {diag.name}",
+            "message": f"Quotation created successfully from Car Diagnosis {diag.name}",
             "quotation_name": qtn.name
         }
 
     except Exception as e:
         frappe.log_error(f"Error creating Quotation from Car Diagnosis {diagnosis_name}", str(e))
         return {"status": "error", "message": str(e)}
+
 
 
 
