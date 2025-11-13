@@ -3,7 +3,7 @@ from car_repair_service.api.utils import get_paginated_data
 
 
 #................Create Customer...............
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_customer(customer_name, mobile_no=None, email_id=None):
     doc = frappe.new_doc("Customer")
     doc.customer_name = customer_name
@@ -20,7 +20,7 @@ def create_customer(customer_name, mobile_no=None, email_id=None):
 
 #.................Get Customer...................
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_customer(search=None):
     if not search:
         return {"status": "error", "message": "Search parameter is required"}
@@ -47,7 +47,7 @@ def get_customer(search=None):
 
  
 #.....................Update Customer...............................
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def update_customer(customer_id, customer_name=None, mobile_no=None, email_id=None):
     try:
         # Fetch customer document
@@ -83,7 +83,7 @@ def update_customer(customer_id, customer_name=None, mobile_no=None, email_id=No
 
 #......................Delete Customer...................
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def delete_customer(customer_id, force=False):
     """
     Delete Customer by ID
@@ -131,7 +131,7 @@ def delete_customer(customer_id, force=False):
 
 
 #....................List all Customers...................
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def list_customers(
     page=1,
     page_size=10,
