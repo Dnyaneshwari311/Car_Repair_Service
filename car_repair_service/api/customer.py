@@ -131,7 +131,7 @@ def delete_customer(customer_id, force=False):
 
 
 #....................List all Customers...................
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def list_customers(
     page=1,
     page_size=10,
