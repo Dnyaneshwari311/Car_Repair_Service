@@ -206,7 +206,6 @@ def create_car_diagnosis(customer_name=None, customer=None):
 # ======================================================
 
 
-
 @frappe.whitelist(allow_guest=True)
 def create_quotation_from_car_diagnosis(diagnosis_name):
     """
@@ -214,7 +213,6 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
     Returns the created Quotation name.
     """
     try:
-        # Fetch Car Diagnosis document
         diag = frappe.get_doc("Car Diagnosis", diagnosis_name)
         if not diag.customer_name:
             frappe.throw(_("Customer not found in Car Diagnosis"))
@@ -229,55 +227,68 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
         if getattr(diag, "email_id", None):
             qtn.contact_email = diag.email_id
 
-        # Add parts from child table
-        if getattr(diag, "car_diagnosis_detail", []):
-            for d in diag.car_diagnosis_detail:
-                if getattr(d, "part_required", None):
-                    # Safely get quantity
+        added_items = False
+
+        # Add items from car_diagnosis_detail
+        for d in getattr(diag, "car_diagnosis_detail", []):
+            if not getattr(d, "part_required", None):
+                continue
+
+            # ✅ Force qty and rate to float
+            try:
+                qty = float(d.quantity) if d.quantity not in (None, "", " ") else 1.0
+                if qty <= 0:
                     qty = 1.0
-                    try:
-                        if d.quantity not in (None, '', ' '):
-                            qty = float(d.quantity)
-                        if qty <= 0:
-                            qty = 1.0
-                    except:
-                        qty = 1.0
+            except:
+                qty = 1.0
 
-                    # Safely get rate
-                    rate = 0.0
-                    try:
-                        if d.estimated_cost not in (None, '', ' '):
-                            rate = float(d.estimated_cost)
-                    except:
-                        rate = 0.0
+            try:
+                rate = float(d.estimated_cost) if d.estimated_cost not in (None, "", " ") else 0.0
+            except:
+                rate = 0.0
 
-                    # Get UOM from Item master
-                    uom = frappe.db.get_value("Item", d.part_required, "stock_uom") or "Nos"
+            # UOM from Item master
+            uom = frappe.db.get_value("Item", d.part_required, "stock_uom") or "Nos"
 
-                    # Append item
-                    qtn.append("items", {
-                        "item_code": d.part_required,
-                        "item_name": d.part_required,
-                        "qty": qty,
-                        "rate": rate,
-                        "uom": uom
-                    })
+            # Append item
+            item = qtn.append("items", {})
+            item.item_code = d.part_required
+            item.item_name = d.part_required
+            item.qty = qty
+            item.rate = rate
+            item.uom = uom
+            # ✅ Explicitly set amount to avoid NoneType * float
+            item.amount = qty * rate
+            added_items = True
 
-        # If no parts, use issues as fallback item
-        elif getattr(diag, "issues", None):
-            qtn.append("items", {
-                "item_name": diag.issues,
-                "qty": 1.0,
-                "rate": 0.0,
-                "uom": "Nos"
-            })
+        # Fallback item if no parts
+        if not added_items:
+            description_field = getattr(diag, "issues", None) or getattr(diag, "problem_description", None)
+            if description_field:
+                item = qtn.append("items", {})
+                item.item_name = description_field
+                item.qty = 1.0
+                item.rate = 0.0
+                item.uom = "Nos"
+                item.amount = 0.0
 
         # Vehicle info
         vehicle_field = "vehicle" if "vehicle" in qtn.as_dict() else "custom_vehicle"
         if getattr(diag, "car", None):
             setattr(qtn, vehicle_field, diag.car)
 
+        # ✅ Ensure all items have numeric qty, rate, and amount
+        for item in qtn.items:
+            if item.qty in (None, "", 0):
+                item.qty = 1.0
+            if item.rate in (None, "", 0):
+                item.rate = 0.0
+            item.amount = float(item.qty) * float(item.rate)
+
         # Insert Quotation
+        qtn.flags.ignore_permissions = True
+        qtn.set_missing_values()
+        qtn.calculate_taxes_and_totals()
         qtn.insert(ignore_permissions=True)
         frappe.db.commit()
 
@@ -288,9 +299,8 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
         }
 
     except Exception as e:
-        frappe.log_error(f"Error creating Quotation from Car Diagnosis {diagnosis_name}", str(e))
+        frappe.log_error(f"Error creating Quotation from Car Diagnosis {diagnosis_name}", frappe.get_traceback())
         return {"status": "error", "message": str(e)}
-
 
 
 
