@@ -4,7 +4,7 @@ from frappe import _
 
 # ..............Create Book Appointment..................
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_book_appointment(data):
     """
     Create a new Book Appointment.
@@ -61,7 +61,7 @@ def create_book_appointment(data):
         
 #.................Create Car Repair Request From Book Appointement...................  
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_car_repair_request(appointment_name):
     """
     Create a Car Repair Request from a Book Appointment
@@ -124,7 +124,7 @@ def create_car_repair_request(appointment_name):
 
 # .....................Get List Of Book Appointment,pagination,........................
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_book_appointments(page=1, page_size=10):
     """
     Get a paginated list of Book Appointments,
@@ -182,7 +182,7 @@ def get_book_appointments(page=1, page_size=10):
 # ...................Get Single Book Appointement Id..........................
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_book_appointment(appointment_id):
     """
     Get a single Book Appointment by ID,
@@ -220,7 +220,7 @@ def get_book_appointment(appointment_id):
 
 # .................update book appointment.......................
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def update_book_appointment(appointment_id, data):
     """
     Update an existing Book Appointment.
@@ -258,7 +258,7 @@ def update_book_appointment(appointment_id, data):
 
 # ................Delete Book Appointement..........................
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def delete_book_appointment(appointment_id):
     """
     Delete a Book Appointment by ID.

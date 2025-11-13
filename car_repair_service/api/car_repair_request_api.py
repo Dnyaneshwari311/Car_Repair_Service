@@ -7,7 +7,7 @@ import json
 # ====================================================
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_car_repair_request(data):
     """
     Create a new Car Repair Request:
@@ -98,6 +98,7 @@ def create_car_repair_request(data):
         # Email is sent automatically in after_insert hook
         return {
             "status": "success",
+            "status_code":201,
             "message": "Car Repair Request created successfully",
             "name": doc.name
         }
@@ -114,7 +115,7 @@ def create_car_repair_request(data):
 # =======================================================
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_car_diagnosis(customer_name=None, customer=None):
     """
     Create a Car Diagnosis record:
@@ -190,6 +191,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
 
         return {
             "status": "success",
+            "status_code":201,
             "message": f"Car Diagnosis created from Car Repair Request {req_name}",
             "name": diagnosis.name
         }
@@ -206,7 +208,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
 # ======================================================
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_quotation_from_car_diagnosis(diagnosis_name):
     """
     API: Create a Quotation from a Car Diagnosis record.
@@ -294,6 +296,7 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
 
         return {
             "status": "success",
+            "status_code":201,
             "message": f"Quotation created successfully from Car Diagnosis {diag.name}",
             "quotation_name": qtn.name
         }
@@ -307,7 +310,7 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
 # ====================================================
 # READ / GET Car Repair Request (single or all)
 # ====================================================
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_car_repair_request(name=None, page=1, page_size=10):
     """
     Fetch Car Repair Request(s):
@@ -343,6 +346,7 @@ def get_car_repair_request(name=None, page=1, page_size=10):
 
             return {
                 "status": "success",
+                "status_code":200,
                 "message": f"Car Repair Request '{name}' fetched successfully",
                 "data": data
             }
@@ -396,7 +400,7 @@ def get_car_repair_request(name=None, page=1, page_size=10):
 # ====================================================
 # UPDATE Car Repair Request
 # ====================================================
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def update_car_repair_request(name, data):
     """
     Update an existing Car Repair Request.
@@ -449,6 +453,7 @@ def update_car_repair_request(name, data):
 
         return {
             "status": "success",
+            "status_code":201,
             "message": f"Car Repair Request '{name}' updated successfully",
             "updated_data": doc.as_dict()
         }
@@ -461,7 +466,7 @@ def update_car_repair_request(name, data):
 # ====================================================
 # DELETE Car Repair Request
 # ====================================================
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def delete_car_repair_request(name):
     """
     Delete an existing Car Repair Request by name.

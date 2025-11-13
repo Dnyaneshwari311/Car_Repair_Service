@@ -1,10 +1,3 @@
-# car_repair/api/login.py
-
-import frappe
-from frappe import _
-from frappe.auth import LoginManager
-from frappe.utils.password import check_password, update_password
-from car_repair_service.api.utils import api_error
 
 
 # @frappe.whitelist(allow_guest=True)
@@ -45,9 +38,10 @@ from car_repair_service.api.utils import api_error
 
 #         # Generate or fetch existing API token
 #         api_key, api_secret = _generate_api_token(user_doc)
+#         print("api_secret ...",api_secret)
 
 #         # Get employee details if user linked
-#         emp_details, company = get_employee_details(user_doc.name)
+#         employee_id, company = get_employee_details(user_doc.name)
 
 #         return {
 #             "status": "success",
@@ -57,7 +51,7 @@ from car_repair_service.api.utils import api_error
 #                 "full_name": user_doc.full_name,
 #                 "roles": [r.role for r in user_doc.roles],
 #                 "company": company,
-#                 "employee": emp_details,
+#                 "employee_id": employee_id
 #             },
 #             "token": {
 #                 "api_key": api_key,
@@ -90,7 +84,7 @@ from car_repair_service.api.utils import api_error
 
 #     api_key = user_doc.api_key or secrets.token_urlsafe(15)
 #     api_secret = user_doc.api_secret or secrets.token_urlsafe(15)
-
+#     print("api_secret ....",api_secret,'api_key')
 #     if not (user_doc.api_key and user_doc.api_secret):
 #         user_doc.api_key = api_key
 #         user_doc.api_secret = api_secret
@@ -100,57 +94,104 @@ from car_repair_service.api.utils import api_error
 
 
 # def get_employee_details(user_id):
+#     emp = frappe.db.get_value("Employee", {"user_id": user_id}, ["name", "company"], as_dict=True)
+#     if emp:
+#         return emp.name, emp.company
+#     return None, ""
+
+
+
+
+
+
+# # For Reset password 
+
+# @frappe.whitelist(allow_guest=False)
+# def reset_password():
+#     """
+#     Reset password for logged-in user.
+
+#     POST JSON:
+#     {
+#         "previous_password": "oldPass",
+#         "new_password": "NewPass",
+#         "confirm_password": "NewPass"
+#     }
+#     """
+#     if frappe.session.user == "Guest":
+#         return api_error("You must be logged in to change your password")
+
+#     data = frappe.local.form_dict or frappe.request.get_json(force=True, silent=True) or {}
+#     prev_pwd = data.get("previous_password")
+#     new_pwd = data.get("new_password")
+#     confirm_pwd = data.get("confirm_password")
+
+#     if not prev_pwd or not new_pwd or not confirm_pwd:
+#         return api_error("All fields are required")
+
+#     if new_pwd != confirm_pwd:
+#         return api_error("New password and confirm password do not match")
+
 #     try:
-#         emp = frappe.get_doc("Employee", {"user_id": user_id})
-#         return emp.as_dict(), emp.company
-#     except:
-#         return {}, ""
+#         check_password(frappe.session.user, prev_pwd)
+#         update_password(frappe.session.user, new_pwd)
+
+#         return {
+#             "status": "success",
+#             "message": "Password updated successfully"
+#         }
+
+#     except frappe.AuthenticationError:
+#         return api_error("Previous password is incorrect")
+
+#     except Exception as e:
+#         frappe.log_error(frappe.get_traceback(), "Reset Password API Error")
+#         return api_error(str(e))
 
 
-# Login Functionality Api
+
+
+import frappe
+from frappe import _
+from frappe.auth import LoginManager
+from car_repair_service.api.utils import api_error
 
 @frappe.whitelist(allow_guest=True)
 def login_and_get_token():
     """
     POST JSON or form-data:
-    {
-        "usr": "email / username / phone",
-        "pwd": "password"
-    }
+      { "usr": "email@example.com" or phone number, "pwd": "password" }
 
-    Returns:
-    {
-        "status": "success",
-        "user": {...},
-        "token": {
-            "api_key": "xxxx",
-            "api_secret": "xxxx"
-        }
-    }
+    Returns JSON with API key, API secret, and user info.
     """
     data = frappe.local.form_dict or frappe.request.get_json(force=True, silent=True) or {}
     login_input = data.get("usr") or data.get("username") or data.get("email")
     pwd = data.get("pwd") or data.get("password")
 
     if not login_input or not pwd:
-        return api_error("Username/Email/Phone and password are required")
+        frappe.throw(_("Username/Email/Phone and password are required"), frappe.AuthenticationError)
 
+    # Detect phone number and fetch actual username/email from DB
     usr = get_user_id_from_input(login_input)
 
     try:
-        # Authenticate user
+        # 1️⃣ Authenticate
         lm = LoginManager()
         lm.authenticate(user=usr, pwd=pwd)
         lm.post_login()
 
+        # 2️⃣ Create new API key + secret for this login
         user_doc = frappe.get_doc("User", frappe.session.user)
-
-        # Generate or fetch existing API token
-        api_key, api_secret = _generate_api_token(user_doc)
-
-        # Get employee details if user linked
+        api_key, api_secret = _generate_new_api_token(user_doc)
+        # try:
+        #     emp_details =  frappe.get_doc("Employee",{"user_id":user_doc.name})
+        #     company = emp_details.company
+        # except:
+        #     company = ""
+        #     emp_details = {}
         employee_id, company = get_employee_details(user_doc.name)
 
+        # 3️⃣ Return success with tokens + user info
         return {
             "status": "success",
             "user": {
@@ -158,8 +199,9 @@ def login_and_get_token():
                 "email": user_doc.email,
                 "full_name": user_doc.full_name,
                 "roles": [r.role for r in user_doc.roles],
-                "company": company,
-                "employee_id": employee_id
+                "company":company,
+                # "emp_details":emp_details,
+                "employee_id":employee_id
             },
             "token": {
                 "api_key": api_key,
@@ -169,37 +211,38 @@ def login_and_get_token():
 
     except frappe.AuthenticationError:
         frappe.local.response.http_status_code = 401
+        # return {"status": "error", "message": _("Invalid login credentials")}
         return api_error("Invalid login credentials")
-
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Login and Token API Error")
         frappe.local.response.http_status_code = 500
-        return api_error(str(e))
+        # return {"status": "error", "message": str(e)}
+        return api_error(e)
 
 
 def get_user_id_from_input(login_input):
-    """Detect phone number and fetch user if login via mobile number."""
-    if login_input.isdigit():
+    """Detect phone number and fetch corresponding user id."""
+    if login_input.isdigit():  # If numeric, treat as phone number
         user = frappe.db.get_value("User", {"phone": login_input}, "name")
         if user:
             return user
     return login_input
 
 
-def _generate_api_token(user_doc):
-    """Generate API key & secret only if missing."""
+def _generate_new_api_token(user_doc):
+    """Generates a fresh API key & secret for the given user."""
     import secrets
 
-    api_key = user_doc.api_key or secrets.token_urlsafe(15)
-    api_secret = user_doc.api_secret or secrets.token_urlsafe(15)
+    # Generate API key & secret (shortened to 15 chars)
+    api_key = secrets.token_urlsafe(15)
+    api_secret = secrets.token_urlsafe(15)
 
-    if not (user_doc.api_key and user_doc.api_secret):
-        user_doc.api_key = api_key
-        user_doc.api_secret = api_secret
-        user_doc.save(ignore_permissions=True)
+    # Store in the User record (overwrite old ones)
+    user_doc.api_key = api_key
+    user_doc.api_secret = api_secret
+    user_doc.save(ignore_permissions=True)
 
     return api_key, api_secret
-
 
 def get_employee_details(user_id):
     emp = frappe.db.get_value("Employee", {"user_id": user_id}, ["name", "company"], as_dict=True)
@@ -209,49 +252,58 @@ def get_employee_details(user_id):
 
 
 
+# apps/education_api/education_api/api/login.py
 
-
-
-# For Reset password 
+import frappe
+from frappe import _
+from frappe.utils.password import check_password, update_password
 
 @frappe.whitelist(allow_guest=False)
 def reset_password():
     """
-    Reset password for logged-in user.
+    Reset password for the currently logged-in user.
 
-    POST JSON:
+    POST JSON or form-data:
     {
-        "previous_password": "oldPass",
-        "new_password": "NewPass",
-        "confirm_password": "NewPass"
+        "previous_password": "oldPass123",
+        "new_password": "NewPass456",
+        "confirm_password": "NewPass456"
     }
+
+    Requires authentication.
     """
     if frappe.session.user == "Guest":
         return api_error("You must be logged in to change your password")
 
     data = frappe.local.form_dict or frappe.request.get_json(force=True, silent=True) or {}
-    prev_pwd = data.get("previous_password")
-    new_pwd = data.get("new_password")
-    confirm_pwd = data.get("confirm_password")
+    previous_password = data.get("previous_password")
+    new_password = data.get("new_password")
+    confirm_password = data.get("confirm_password")
 
-    if not prev_pwd or not new_pwd or not confirm_pwd:
-        return api_error("All fields are required")
+    # Validate inputs
+    if not previous_password or not new_password or not confirm_password:
+        return api_error("All fields (previous_password, new_password, confirm_password) are required")
 
-    if new_pwd != confirm_pwd:
+    if new_password != confirm_password:
         return api_error("New password and confirm password do not match")
 
     try:
-        check_password(frappe.session.user, prev_pwd)
-        update_password(frappe.session.user, new_pwd)
+
+        # Check old password
+        check_password(frappe.session.user, previous_password)
+
+        # Update password
+        update_password(frappe.session.user, new_password)
 
         return {
             "status": "success",
-            "message": "Password updated successfully"
+            "status_code": 201,
+            "msg": ("Password updated successfully")
         }
 
     except frappe.AuthenticationError:
         return api_error("Previous password is incorrect")
-
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Reset Password API Error")
-        return api_error(str(e))
+        return api_error(e)
+

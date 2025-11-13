@@ -2,9 +2,9 @@ import frappe
 from frappe import _
 
 # -----------------------------
-# CREATE
+# CREATE CAR DIAGNOSIS
 # -----------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_car_diagnosis(customer_name=None, customer=None):
     """
     Create a Car Diagnosis record:
@@ -83,7 +83,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
 
 
 # -----------------------------
-# READ (GET SINGLE RECORD)
+# CAR DIAGNOSIS GET BY ID(GET SINGLE RECORD)
 # -----------------------------
 
 from urllib.parse import urljoin
@@ -147,9 +147,9 @@ def car_diagnosis_get(name):
 
 
 # -----------------------------
-# UPDATE
+# UPDATE CAR DIAGNOSIS
 # -----------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def update_car_diagnosis(name=None, data=None):
     """
     Update an existing Car Diagnosis record.
@@ -254,9 +254,9 @@ def update_car_diagnosis(name=None, data=None):
 
 
 # -----------------------------
-# DELETE
+# DELETE CAR DIAGNOSIS
 # -----------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def delete_car_diagnosis(name):
     """
     Delete a Car Diagnosis record.
@@ -283,7 +283,7 @@ def delete_car_diagnosis(name):
 
 
 # -----------------------------
-# LIST (WITH PAGINATION, SEARCH, SORTING)
+# LIST CAR DIAGNOSIS (WITH PAGINATION, SEARCH, SORTING)
 # -----------------------------
 
 
