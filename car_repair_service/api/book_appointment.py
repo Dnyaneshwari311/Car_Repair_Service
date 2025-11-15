@@ -6,6 +6,7 @@ from frappe import _
 
 @frappe.whitelist()
 def create_book_appointment(data):
+    
     """
     Create a new Book Appointment.
     Expects JSON data:
@@ -24,6 +25,10 @@ def create_book_appointment(data):
     }
     """
     try:
+        print("TOKEN RECEIVED:", frappe.get_request_header("Authorization"))
+        print("CURRENT USER:", frappe.session.user)
+
+
         data = frappe.parse_json(data)
 
         # Create new document

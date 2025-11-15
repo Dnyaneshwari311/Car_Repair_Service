@@ -76,3 +76,39 @@ def get_paginated_data(
         "pagination": pagination,
         "data": data
     }
+    
+    
+    
+    
+    
+    
+
+
+def ensure_authenticated():
+    """
+    Validate that a request includes a valid API token.
+    Works on all Frappe versions (v13–v15).
+    """
+    auth_header = frappe.get_request_header("Authorization")
+
+    if not auth_header or not auth_header.lower().startswith("token "):
+        frappe.throw("Unauthorized: Missing API token", frappe.PermissionError)
+
+    try:
+        # Header format: token <api_key>:<api_secret>
+        token_str = auth_header.split("token ")[1].strip()
+        api_key, api_secret = token_str.split(":")
+
+        user = frappe.db.get_value("User", {"api_key": api_key}, "name")
+        if not user:
+            frappe.throw("Invalid API token", frappe.PermissionError)
+
+        stored_secret = frappe.utils.password.get_decrypted_password("User", user, "api_secret")
+        if stored_secret != api_secret:
+            frappe.throw("Invalid API token", frappe.PermissionError)
+
+        # Set current user context
+        frappe.set_user(user)
+
+    except Exception:
+        frappe.throw("Unauthorized: Missing or invalid API token", frappe.PermissionError)
