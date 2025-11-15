@@ -1,5 +1,5 @@
 import frappe
-from car_repair_service.api.utils import get_paginated_data
+from car_repair_service.api.utils import get_paginated_data,ensure_authenticated
 
 
 
@@ -11,7 +11,10 @@ from car_repair_service.api.utils import get_paginated_data
 
 @frappe.whitelist()
 def create_customer_and_vehicle(data=None):
+    ensure_authenticated()
     try:
+        print("TOKEN RECEIVED:", frappe.get_request_header("Authorization"))
+        print("CURRENT USER:", frappe.session.user)
         if not data:
             frappe.throw("Missing 'data' parameter")
 
@@ -116,7 +119,6 @@ def create_customer_and_vehicle(data=None):
 @frappe.whitelist()
 def update_customer(customer_id=None, customer_name=None, mobile_no=None, email_id=None,
                     vehicle_id=None, license_plate=None, make=None, model=None):
-    from car_repair_service.api.utils import ensure_authenticated
     ensure_authenticated()
 
     result = {}
@@ -211,15 +213,14 @@ def update_customer(customer_id=None, customer_name=None, mobile_no=None, email_
 
 @frappe.whitelist()
 def delete_customer_and_vehicles(customer_id, force=False):
+    ensure_authenticated()
     """
     Delete a Customer AND all linked Vehicles.
     :param customer_id: Customer document name (e.g., CUST-0001)
     :param force: pass true to force delete even if linked
     """
 
-    from car_repair_service.api.utils import ensure_authenticated
-    ensure_authenticated()
-
+    
     if not customer_id:
         return {"status": "error", "message": "Customer ID is required"}
 
@@ -286,12 +287,15 @@ def delete_customer_and_vehicles(customer_id, force=False):
 # --------------------------------------------------------
 @frappe.whitelist()
 def customer_vehicle_list(page=1, page_size=10, search=None, sort_by="c.creation", sort_order="desc"):
+    ensure_authenticated()
     """Return Customer + Vehicle list with pagination, search, sorting"""
 
     page = int(page)
     page_size = int(page_size)
     offset = (page - 1) * page_size
     vals = {}
+    print("TOKEN RECEIVED:", frappe.get_request_header("Authorization"))
+    print("CURRENT USER:", frappe.session.user)
 
     # SEARCH FILTER
     search_filter = ""

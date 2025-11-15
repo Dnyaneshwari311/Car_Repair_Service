@@ -210,10 +210,14 @@ def login_and_get_token():
         }
 
     except frappe.AuthenticationError:
-        frappe.local.response.http_status_code = 401
+        print("i ex....")
+        frappe.local.response["http_status_code"] = 403
+        frappe.local.response["message"] = "Invalid login credentials"
+        return
         # return {"status": "error", "message": _("Invalid login credentials")}
-        return api_error("Invalid login credentials")
+        # return api_error("Invalid login credentials")
     except Exception as e:
+        print("in")
         frappe.log_error(frappe.get_traceback(), "Login and Token API Error")
         frappe.local.response.http_status_code = 500
         # return {"status": "error", "message": str(e)}
