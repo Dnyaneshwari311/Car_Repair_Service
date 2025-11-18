@@ -5,8 +5,6 @@ import json
 # ====================================================
 # CREATE Car Repair Request (with Auto Customer + Email)
 # ====================================================
-
-
 @frappe.whitelist()
 def create_car_repair_request(data):
     """
@@ -15,21 +13,43 @@ def create_car_repair_request(data):
     - Ensures Vehicle Make/Model exist
     - Inserts Car Repair Request record
     - Populates customer_name field
-    (Email is handled by after_insert event)
+    - Skips creation if Car Repair Request already exists
     """
     try:
         data = json.loads(data) if isinstance(data, str) else data
 
-        # ====================================================
-        # Step 1: Auto-create Customer if not exists
-        # ====================================================
         customer_name = data.get("customer_name")
         email = data.get("email")
         phone = data.get("phone")
+        car = data.get("car")
+        license_plate = data.get("license_plate")
 
         if not customer_name or not email:
             frappe.throw("Missing customer_name or email for Customer creation")
 
+        # ====================================================
+        # Step 0: Skip if Car Repair Request already exists
+        # ====================================================
+        existing_crr = frappe.get_all(
+            "Car Repair Request",
+            filters={
+                "customer_name": customer_name,
+                "car": car,
+                "license_plate": license_plate
+            },
+            limit=1
+        )
+        if existing_crr:
+            return {
+                "status": "exists",
+                "status_code": 200,
+                "message": f"Car Repair Request already exists: {existing_crr[0].name}",
+                "name": existing_crr[0].name
+            }
+
+        # ====================================================
+        # Step 1: Auto-create Customer if not exists
+        # ====================================================
         existing_customer_name = frappe.db.exists("Customer", {"email_id": email})
         if existing_customer_name:
             customer_doc = frappe.get_doc("Customer", existing_customer_name)
@@ -68,7 +88,6 @@ def create_car_repair_request(data):
 
         doc = frappe.new_doc("Car Repair Request")
 
-        # --- Main fields to set dynamically ---
         fields = [
             "email", "phone", "make", "model", "assign_adviser",
             "car", "license_plate", "chassis_no", "car_manufacturing_year",
@@ -80,7 +99,7 @@ def create_car_repair_request(data):
             if f in data:
                 doc.set(f, data[f])
 
-        # ✅ Link correct Customer and set customer_name
+        # ✅ Link correct Customer
         doc.customer = customer_doc.name
         doc.customer_name = customer_doc.customer_name
 
@@ -92,13 +111,12 @@ def create_car_repair_request(data):
         for img in data.get("car_repair_images", []):
             doc.append("car_repair_images", {"image": img.get("image")})
 
-        # --- Insert document ---
         doc.insert(ignore_permissions=True)
         frappe.db.commit()
-        # Email is sent automatically in after_insert hook
+
         return {
             "status": "success",
-            "status_code":201,
+            "status_code": 201,
             "message": "Car Repair Request created successfully",
             "name": doc.name
         }
@@ -106,6 +124,118 @@ def create_car_repair_request(data):
     except Exception as e:
         frappe.log_error("Create Car Repair Request Error", str(e))
         return {"status": "error", "message": str(e)}
+
+
+
+
+# import frappe
+# from frappe import _
+# import json
+
+# # ====================================================
+# # CREATE Car Repair Request (with Auto Customer + Email)
+# # ====================================================
+
+
+# @frappe.whitelist()
+# def create_car_repair_request(data):
+#     """
+#     Create a new Car Repair Request:
+#     - Auto-creates Customer if not exists
+#     - Ensures Vehicle Make/Model exist
+#     - Inserts Car Repair Request record
+#     - Populates customer_name field
+#     (Email is handled by after_insert event)
+#     """
+#     try:
+#         data = json.loads(data) if isinstance(data, str) else data
+
+#         # ====================================================
+#         # Step 1: Auto-create Customer if not exists
+#         # ====================================================
+#         customer_name = data.get("customer_name")
+#         email = data.get("email")
+#         phone = data.get("phone")
+
+#         if not customer_name or not email:
+#             frappe.throw("Missing customer_name or email for Customer creation")
+
+#         existing_customer_name = frappe.db.exists("Customer", {"email_id": email})
+#         if existing_customer_name:
+#             customer_doc = frappe.get_doc("Customer", existing_customer_name)
+#         else:
+#             customer_doc = frappe.new_doc("Customer")
+#             customer_doc.customer_name = customer_name
+#             customer_doc.email_id = email
+#             customer_doc.mobile_no = phone
+#             customer_doc.customer_group = "Individual"
+#             customer_doc.territory = "All Territories"
+#             customer_doc.insert(ignore_permissions=True)
+#             frappe.msgprint(f"✅ Customer {customer_doc.customer_name} created successfully.")
+
+#         # ====================================================
+#         # Step 2: Ensure Vehicle Make & Model exist
+#         # ====================================================
+#         make = data.get("make")
+#         model = data.get("model")
+
+#         if make and not frappe.db.exists("Vehicle Make", {"make": make}):
+#             vehicle_make = frappe.new_doc("Vehicle Make")
+#             vehicle_make.make = make
+#             vehicle_make.insert(ignore_permissions=True)
+#             frappe.msgprint(f"✅ Created new Vehicle Make: {make}")
+
+#         if model and not frappe.db.exists("Vehicle Model", {"model": model}):
+#             vehicle_model = frappe.new_doc("Vehicle Model")
+#             vehicle_model.model = model
+#             vehicle_model.insert(ignore_permissions=True)
+#             frappe.msgprint(f"✅ Created new Vehicle Model: {model}")
+
+#         # ====================================================
+#         # Step 3: Create Car Repair Request
+#         # ====================================================
+#         frappe.flags.in_create_car_repair_api = True  # avoids re-trigger in hooks
+
+#         doc = frappe.new_doc("Car Repair Request")
+
+#         # --- Main fields to set dynamically ---
+#         fields = [
+#             "email", "phone", "make", "model", "assign_adviser",
+#             "car", "license_plate", "chassis_no", "car_manufacturing_year",
+#             "odometer_photo", "priority", "service_type", "repair_request_date",
+#             "driver_name", "driver_mob_no", "odometer_value", "fuel_level",
+#             "vehicle_pick_up", "customer_signature", "remark", "fuel_type"
+#         ]
+#         for f in fields:
+#             if f in data:
+#                 doc.set(f, data[f])
+
+#         # ✅ Link correct Customer and set customer_name
+#         doc.customer = customer_doc.name
+#         doc.customer_name = customer_doc.customer_name
+
+#         # --- Child Table: Vehicle Concerns ---
+#         for vc in data.get("vehicle_concern", []):
+#             doc.append("vehicle_concern", {"vehicle_concern": vc.get("vehicle_concern")})
+
+#         # --- Child Table: Car Repair Images ---
+#         for img in data.get("car_repair_images", []):
+#             doc.append("car_repair_images", {"image": img.get("image")})
+
+#         # --- Insert document ---
+#         doc.insert(ignore_permissions=True)
+#         frappe.db.commit()
+#         # Email is sent automatically in after_insert hook
+#         return {
+#             "status": "success",
+#             "status_code":201,
+#             "message": "Car Repair Request created successfully",
+#             "name": doc.name
+#         }
+
+#     except Exception as e:
+#         frappe.log_error("Create Car Repair Request Error", str(e))
+#         return {"status": "error", "message": str(e)}
 
 
 

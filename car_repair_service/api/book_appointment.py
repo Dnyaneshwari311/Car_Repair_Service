@@ -1,73 +1,201 @@
 import frappe
 from frappe import _
+from frappe.utils import nowdate, now_datetime
+from car_repair_service.api.utils import ensure_authenticated
 
 
-# ..............Create Book Appointment..................
-
+# ---------------------------------------------------------
+# ..............Create Book Appointment....................
+# ---------------------------------------------------------
 @frappe.whitelist()
 def create_book_appointment(data):
-    
+    ensure_authenticated()
     """
-    Create a new Book Appointment.
-    Expects JSON data:
-    {
-        "customer_name": "John Doe",
-        "email": "john@example.com",
-        "phone": "9876543210",
-        "license_plate": "MH12AB1234",
-        "make": "Maruti",
-        "model": "Swift",
-        "service_type": "Repair",
-        "appointment_date": "2025-11-07",
-        "appointment_time": "10:00",
-        "vehicle_pickup_required": "Yes, Pickup my vehicle",
-        "pickup_address": "123 Street, Pune"
-    }
+    Create a new Book Appointment with validation.
+    Auto-create Customer, Vehicle Make, Vehicle Model, and Vehicle if not found.
+    Skip appointment creation if a matching one exists.
     """
     try:
-        print("TOKEN RECEIVED:", frappe.get_request_header("Authorization"))
-        print("CURRENT USER:", frappe.session.user)
-
-
         data = frappe.parse_json(data)
 
-        # Create new document
-        doc = frappe.get_doc({
+        # Extract core data
+        customer_name = data.get("customer_name")
+        email = data.get("email")
+        phone = data.get("phone")
+        license_plate = data.get("license_plate")
+        make = data.get("make")
+        model = data.get("model")
+
+        appointment_date = data.get("appointment_date")
+        appointment_time = data.get("appointment_time")
+
+        # Validate appointment date and time
+        today = nowdate()
+        if appointment_date < today:
+            return {"status": "error", "message": "Appointment date cannot be in the past"}
+
+        if appointment_date == today and appointment_time:
+            current_time = now_datetime().strftime("%H:%M")
+            if appointment_time < current_time:
+                return {"status": "error", "message": "Appointment time cannot be in the past"}
+
+        # === Auto-create or fetch Customer ===
+        customer_exists = frappe.db.exists("Customer", {"customer_name": customer_name})
+        if not customer_exists:
+            customer_doc = frappe.get_doc({
+                "doctype": "Customer",
+                "customer_name": customer_name,
+                "customer_type": "Individual",
+                "email_id": email,
+                "mobile_no": phone,
+                "territory": "All Territories"
+            })
+            customer_doc.insert(ignore_permissions=True)
+
+        # === Auto-create or fetch Vehicle Make ===
+        make_name = frappe.db.exists("Vehicle Make", {"make": make})
+        if not make_name:
+            make_doc = frappe.get_doc({
+                "doctype": "Vehicle Make",
+                "make": make
+            })
+            make_doc.insert(ignore_permissions=True)
+            make_name = make_doc.name
+
+        # === Auto-create or fetch Vehicle Model ===
+        model_name = frappe.db.exists("Vehicle Model", {"model": model})
+        if not model_name:
+            model_doc = frappe.get_doc({
+                "doctype": "Vehicle Model",
+                "model": model,
+                "make": make_name
+            })
+            model_doc.insert(ignore_permissions=True)
+            model_name = model_doc.name
+
+        # === Auto-create or fetch Vehicle ===
+        vehicle_exists = frappe.db.exists("Vehicle", {"license_plate": license_plate})
+        if not vehicle_exists:
+            vehicle_doc = frappe.get_doc({
+                "doctype": "Vehicle",
+                "license_plate": license_plate,
+                "make": make_name,
+                "model": model_name,
+                "custom_customer_name": customer_name
+            })
+            vehicle_doc.insert(ignore_permissions=True)
+
+        # === Prevent duplicate appointments and skip creation ===
+        existing_appointment = frappe.db.exists("Book Appointment", {
+            "customer_name": customer_name,
+            "license_plate": license_plate,
+            "appointment_date": appointment_date,
+            "appointment_time": appointment_time
+        })
+        if existing_appointment:
+            return {
+                "status": "success",
+                "message": "Appointment already exists. Skipping creation.",
+                "appointment_id": existing_appointment
+            }
+
+        # === Create new Book Appointment ===
+        appointment = frappe.get_doc({
             "doctype": "Book Appointment",
-            "customer_name": data.get("customer_name"),
-            "email": data.get("email"),
-            "phone": data.get("phone"),
-            "license_plate": data.get("license_plate"),
-            "make": data.get("make"),
-            "model": data.get("model"),
+            "customer_name": customer_name,
+            "email": email,
+            "phone": phone,
+            "license_plate": license_plate,
+            "make": make,
+            "model": model,
             "service_type": data.get("service_type"),
-            "appointment_date": data.get("appointment_date"),
-            "appointment_time": data.get("appointment_time"),
+            "appointment_date": appointment_date,
+            "appointment_time": appointment_time,
             "vehicle_pickup_required": data.get("vehicle_pickup_required"),
             "pickup_address": data.get("pickup_address"),
             "status": "Open"
         })
 
-        doc.insert(ignore_permissions=True)
+        appointment.insert(ignore_permissions=True)
         frappe.db.commit()
 
         return {
             "status": "success",
-            "message": "Appointment created successfully",
-            "appointment_id": doc.name
+            "message": "Appointment booked successfully",
+            "appointment_id": appointment.name
         }
 
     except Exception as e:
         frappe.log_error(message=str(e), title="Create Appointment Error")
-        return {"status": "error", 
-                "message": str(e)}
-        
-        
-        
-#.................Create Car Repair Request From Book Appointement...................  
+        return {"status": "error", "message": str(e)}
 
+# ..............Create Book Appointment..................
+
+# @frappe.whitelist()
+# def create_book_appointment(data):
+    
+#     """
+#     Create a new Book Appointment.
+#     Expects JSON data:
+#     {
+#         "customer_name": "John Doe",
+#         "email": "john@example.com",
+#         "phone": "9876543210",
+#         "license_plate": "MH12AB1234",
+#         "make": "Maruti",
+#         "model": "Swift",
+#         "service_type": "Repair",
+#         "appointment_date": "2025-11-07",
+#         "appointment_time": "10:00",
+#         "vehicle_pickup_required": "Yes, Pickup my vehicle",
+#         "pickup_address": "123 Street, Pune"
+#     }
+#     """
+#     try:
+#         print("TOKEN RECEIVED:", frappe.get_request_header("Authorization"))
+#         print("CURRENT USER:", frappe.session.user)
+
+
+#         data = frappe.parse_json(data)
+
+#         # Create new document
+#         doc = frappe.get_doc({
+#             "doctype": "Book Appointment",
+#             "customer_name": data.get("customer_name"),
+#             "email": data.get("email"),
+#             "phone": data.get("phone"),
+#             "license_plate": data.get("license_plate"),
+#             "make": data.get("make"),
+#             "model": data.get("model"),
+#             "service_type": data.get("service_type"),
+#             "appointment_date": data.get("appointment_date"),
+#             "appointment_time": data.get("appointment_time"),
+#             "vehicle_pickup_required": data.get("vehicle_pickup_required"),
+#             "pickup_address": data.get("pickup_address"),
+#             "status": "Open"
+#         })
+
+#         doc.insert(ignore_permissions=True)
+#         frappe.db.commit()
+
+#         return {
+#             "status": "success",
+#             "message": "Appointment created successfully",
+#             "appointment_id": doc.name
+#         }
+
+#     except Exception as e:
+#         frappe.log_error(message=str(e), title="Create Appointment Error")
+#         return {"status": "error", 
+#                 "message": str(e)}
+        
+        
+#------------------------------------------------------------------------------------    
+#.................Create Car Repair Request From Book Appointement...................  
+# -----------------------------------------------------------------------------------
 @frappe.whitelist()
 def create_car_repair_request(appointment_name):
+    ensure_authenticated()
     """
     Create a Car Repair Request from a Book Appointment
     """
@@ -126,11 +254,12 @@ def create_car_repair_request(appointment_name):
         frappe.log_error(message=str(e), title="Create Car Repair Request Error")
         return {"status": "error", "message": str(e)}
 
-
+# -------------------------------------------------------------------------------------
 # .....................Get List Of Book Appointment,pagination,........................
-
+# -------------------------------------------------------------------------------------
 @frappe.whitelist()
 def get_book_appointments(page=1, page_size=10):
+    ensure_authenticated()
     """
     Get a paginated list of Book Appointments,
     including make and model details.
@@ -183,12 +312,13 @@ def get_book_appointments(page=1, page_size=10):
 
 
 
-
+# ----------------------------------------------------------------------------
 # ...................Get Single Book Appointement Id..........................
-
+# ----------------------------------------------------------------------------
 
 @frappe.whitelist()
 def get_book_appointment(appointment_id):
+    ensure_authenticated()
     """
     Get a single Book Appointment by ID,
     including make and model details.
@@ -222,11 +352,12 @@ def get_book_appointment(appointment_id):
 
 
 
-
-# .................update book appointment.......................
-
+# -----------------------------------------------------------------
+# .................update book appointment.........................
+# -----------------------------------------------------------------
 @frappe.whitelist()
 def update_book_appointment(appointment_id, data):
+    ensure_authenticated()
     """
     Update an existing Book Appointment.
     Expects JSON data (stringified) in 'data' — may include make, model, etc.
@@ -260,11 +391,12 @@ def update_book_appointment(appointment_id, data):
         return {"status": "error", "message": str(e)}
 
 
-
+# ------------------------------------------------------------------
 # ................Delete Book Appointement..........................
-
+# ------------------------------------------------------------------
 @frappe.whitelist()
 def delete_book_appointment(appointment_id):
+    ensure_authenticated()
     """
     Delete a Book Appointment by ID.
     Example:
