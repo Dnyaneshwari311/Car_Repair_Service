@@ -1,12 +1,14 @@
 import frappe
 from frappe import _
 import json
+from car_repair_service.api.utils import ensure_authenticated
 
 # ====================================================
 # CREATE Car Repair Request (with Auto Customer + Email)
 # ====================================================
 @frappe.whitelist()
 def create_car_repair_request(data):
+    ensure_authenticated()
     """
     Create a new Car Repair Request:
     - Auto-creates Customer if not exists
@@ -247,10 +249,12 @@ def create_car_repair_request(data):
 
 @frappe.whitelist()
 def create_car_diagnosis(customer_name=None, customer=None):
+    ensure_authenticated()
     """
     Create a Car Diagnosis record:
     - Prefill from last Car Repair Request for this customer
     - Auto-fill Reference No from Car Repair Request
+    - Skip creation if Car Diagnosis already exists for this request
     """
     try:
         if not customer_name and not customer:
@@ -278,6 +282,15 @@ def create_car_diagnosis(customer_name=None, customer=None):
 
         req_name = last_request[0]["name"]
 
+        # Check if Car Diagnosis already exists for this Car Repair Request
+        existing_diagnosis = frappe.db.exists("Car Diagnosis", {"reference_no": req_name})
+        if existing_diagnosis:
+            return {
+                "status": "skipped",
+                "message": f"Car Diagnosis already exists for Car Repair Request {req_name}",
+                "name": existing_diagnosis
+            }
+
         # Fetch full Car Repair Request including child tables
         req_doc = frappe.get_doc("Car Repair Request", req_name)
 
@@ -301,8 +314,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
         diagnosis.customer_signature = req_doc.customer_signature
 
         # ✅ Auto-fill Reference No from Car Repair Request
-        if not diagnosis.reference_no and req_doc.name:
-            diagnosis.reference_no = req_doc.name
+        diagnosis.reference_no = req_doc.name
 
         # Child table: Vehicle Concern
         if hasattr(req_doc, "vehicle_concern"):
@@ -312,8 +324,8 @@ def create_car_diagnosis(customer_name=None, customer=None):
         # Child table: Car Repair Images
         if hasattr(req_doc, "car_repair_images"):
             for img in req_doc.car_repair_images:
-              if img.image: 
-                diagnosis.append("car_repair_images", {"image": img.image})
+                if img.image: 
+                    diagnosis.append("car_repair_images", {"image": img.image})
 
         # Insert document
         diagnosis.insert(ignore_permissions=True)
@@ -321,7 +333,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
 
         return {
             "status": "success",
-            "status_code":201,
+            "status_code": 201,
             "message": f"Car Diagnosis created from Car Repair Request {req_name}",
             "name": diagnosis.name
         }
@@ -329,6 +341,92 @@ def create_car_diagnosis(customer_name=None, customer=None):
     except Exception as e:
         frappe.log_error("Error creating Car Diagnosis", str(e))
         return {"status": "error", "message": str(e)}
+
+
+# @frappe.whitelist()
+# def create_car_diagnosis(customer_name=None, customer=None):
+#     """
+#     Create a Car Diagnosis record:
+#     - Prefill from last Car Repair Request for this customer
+#     - Auto-fill Reference No from Car Repair Request
+#     """
+#     try:
+#         if not customer_name and not customer:
+#             frappe.throw(_("Please provide either customer_name or customer"))
+
+#         # If customer link is provided, fetch customer_name
+#         if customer and not customer_name:
+#             customer_name = frappe.db.get_value("Customer", customer, "customer_name")
+
+#         # Fetch latest Car Repair Request
+#         last_request = frappe.get_all(
+#             "Car Repair Request",
+#             filters={"customer_name": customer_name},
+#             fields=[
+#                 "name", "car", "car_model", "license_plate", "chassis_no",
+#                 "email", "phone", "repair_request_date", "priority",
+#                 "vehicle_pick_up", "customer_signature"
+#             ],
+#             order_by="creation desc",
+#             limit_page_length=1
+#         )
+
+#         if not last_request:
+#             return {"status": "not_found", "message": "No Car Repair Request found for this customer"}
+
+#         req_name = last_request[0]["name"]
+
+#         # Fetch full Car Repair Request including child tables
+#         req_doc = frappe.get_doc("Car Repair Request", req_name)
+
+#         # Create new Car Diagnosis
+#         diagnosis = frappe.new_doc("Car Diagnosis")
+#         diagnosis.customer_name = req_doc.customer_name
+
+#         # Only assign customer link if it exists
+#         if hasattr(req_doc, "customer"):
+#             diagnosis.customer = req_doc.customer
+
+#         diagnosis.car = req_doc.car
+#         diagnosis.model = req_doc.car_model
+#         diagnosis.license_plate = req_doc.license_plate
+#         diagnosis.chassis_no = req_doc.chassis_no
+#         diagnosis.email_id = req_doc.email
+#         diagnosis.phone = req_doc.phone
+#         diagnosis.date_of_receipt = req_doc.repair_request_date
+#         diagnosis.priority = req_doc.priority
+#         diagnosis.vehicle_pick_up = req_doc.vehicle_pick_up
+#         diagnosis.customer_signature = req_doc.customer_signature
+
+#         # ✅ Auto-fill Reference No from Car Repair Request
+#         if not diagnosis.reference_no and req_doc.name:
+#             diagnosis.reference_no = req_doc.name
+
+#         # Child table: Vehicle Concern
+#         if hasattr(req_doc, "vehicle_concern"):
+#             for vc in req_doc.vehicle_concern:
+#                 diagnosis.append("vehicle_concern", {"vehicle_concern": vc.vehicle_concern})
+
+#         # Child table: Car Repair Images
+#         if hasattr(req_doc, "car_repair_images"):
+#             for img in req_doc.car_repair_images:
+#               if img.image: 
+#                 diagnosis.append("car_repair_images", {"image": img.image})
+
+#         # Insert document
+#         diagnosis.insert(ignore_permissions=True)
+#         frappe.db.commit()
+
+#         return {
+#             "status": "success",
+#             "status_code":201,
+#             "message": f"Car Diagnosis created from Car Repair Request {req_name}",
+#             "name": diagnosis.name
+#         }
+
+#     except Exception as e:
+#         frappe.log_error("Error creating Car Diagnosis", str(e))
+#         return {"status": "error", "message": str(e)}
 
 
 
@@ -340,6 +438,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
 
 @frappe.whitelist()
 def create_quotation_from_car_diagnosis(diagnosis_name):
+    ensure_authenticated()
     """
     API: Create a Quotation from a Car Diagnosis record.
     Returns the created Quotation name.
@@ -442,6 +541,7 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
 # ====================================================
 @frappe.whitelist()
 def get_car_repair_request(name=None, page=1, page_size=10):
+    ensure_authenticated()
     """
     Fetch Car Repair Request(s):
     - If 'name' is provided → returns full document (with child tables)
@@ -494,8 +594,8 @@ def get_car_repair_request(name=None, page=1, page_size=10):
             "Car Repair Request",
             fields=[
                 "name", "customer_name", "email", "phone",
-                "make", "model", "license_plate",
-                "priority", "service_type", "repair_request_date"
+                "make", "model", "license_plate","assign_adviser","car_manufacturing_year","odometer_photo",
+                "priority", "service_type", "repair_request_date","reason_for_repair","odometer_value","customer_signature"
             ],
             order_by="creation desc",
             start=start,
@@ -532,6 +632,7 @@ def get_car_repair_request(name=None, page=1, page_size=10):
 # ====================================================
 @frappe.whitelist()
 def update_car_repair_request(name, data):
+    ensure_authenticated()
     """
     Update an existing Car Repair Request.
     - Supports partial updates (only provided fields)
@@ -598,6 +699,7 @@ def update_car_repair_request(name, data):
 # ====================================================
 @frappe.whitelist()
 def delete_car_repair_request(name):
+    ensure_authenticated()
     """
     Delete an existing Car Repair Request by name.
     Safe delete with existence check and error handling.

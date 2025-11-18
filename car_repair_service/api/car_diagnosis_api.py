@@ -382,9 +382,8 @@ def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", so
 
         # 🔹 Define fields to return
         update_fields = [
-            "name", "customer_name", "car", "model", "license_plate",
-            "chassis_no", "phone", "email_id", "priority",
-            "reference_no", "creation", "modified", "customer_signature"
+            "name", "customer_name", "license_plate", "phone", "email_id", "priority",
+            "reference_no","estimated_delivery_date","estimated_delivery_time","creation", "modified", "customer_signature"
         ]
 
         # 🔹 Build filters
