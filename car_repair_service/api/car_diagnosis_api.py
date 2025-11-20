@@ -1,11 +1,14 @@
 import frappe
 from frappe import _
+from car_repair_service.api.utils import ensure_authenticated
+
 
 # -----------------------------
 # CREATE CAR DIAGNOSIS
 # -----------------------------
 @frappe.whitelist()
 def create_car_diagnosis(customer_name=None, customer=None):
+    ensure_authenticated()
     """
     Create a Car Diagnosis record:
     - Prefill from last Car Repair Request for this customer
@@ -91,6 +94,7 @@ from urllib.parse import urljoin
 
 @frappe.whitelist()
 def car_diagnosis_get(name):
+    ensure_authenticated()
     """
     Get Car Diagnosis by name (primary key)
     Returns details with child tables and full URLs for image fields
@@ -151,6 +155,7 @@ def car_diagnosis_get(name):
 # -----------------------------
 @frappe.whitelist()
 def update_car_diagnosis(name=None, data=None):
+    ensure_authenticated()
     """
     Update an existing Car Diagnosis record.
     - Updates main fields and Car Diagnosis Detail child table.
@@ -258,6 +263,7 @@ def update_car_diagnosis(name=None, data=None):
 # -----------------------------
 @frappe.whitelist()
 def delete_car_diagnosis(name):
+    ensure_authenticated()
     """
     Delete a Car Diagnosis record.
     """
@@ -368,39 +374,38 @@ from urllib.parse import urljoin
 
 @frappe.whitelist()
 def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", sort_order="desc", is_pagination=False, **kwargs):
-    """
-    Fetch paginated Car Diagnosis list with search, sorting, and full image URLs.
-    Similar structure to loan_member_list_as_per_group_assignment
-    """
+    ensure_authenticated()
+
     try:
         is_pagination = frappe.utils.sbool(is_pagination)
         base_url = frappe.request.host_url.rstrip("/") + frappe.request.path
         del kwargs["cmd"]
 
-        # 🔹 Define searchable fields
+        # 🔹 searchable fields
         search_fields = ["customer_name", "license_plate", "car", "reference_no"]
 
-        # 🔹 Define fields to return
+        # 🔹 fields to return from parent
         update_fields = [
             "name", "customer_name", "license_plate", "phone", "email_id", "priority",
-            "reference_no","estimated_delivery_date","estimated_delivery_time","creation", "modified", "customer_signature"
+            "reference_no", "estimated_delivery_date", "estimated_delivery_time",
+            "creation", "modified", "customer_signature"
         ]
 
-        # 🔹 Build filters
+        # 🔹 filters
         filters = {}
         if kwargs.get("priority"):
             filters["priority"] = kwargs.get("priority")
         if kwargs.get("vehicle_pick_up"):
             filters["vehicle_pick_up"] = kwargs.get("vehicle_pick_up")
 
-        # 🔹 Apply search logic
+        # 🔹 search condition
         search_condition = ""
         if search:
             search_condition = " OR ".join(
                 [f"{field} LIKE %(search)s" for field in search_fields]
             )
 
-        # 🔹 Build main query
+        # 🔹 build main query
         query = f"""
             SELECT {", ".join(update_fields)}
             FROM `tabCar Diagnosis`
@@ -419,31 +424,69 @@ def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", so
 
         query += f" ORDER BY `{sort_by}` {sort_order.upper()}"
 
-        # 🔹 Pagination
+        # 🔹 pagination
         if is_pagination:
             offset = (int(page) - 1) * int(page_size)
             query += f" LIMIT {offset}, {int(page_size)}"
 
-        # 🔹 Prepare values
+        # 🔹 execute query
         values = filters.copy()
         if search:
             values["search"] = f"%{search}%"
 
-        # 🔹 Execute query
         data = frappe.db.sql(query, values, as_dict=True)
 
-        # 🔹 Add full URL for image fields
         host_url = frappe.request.host_url.rstrip("/")
+
         image_fields = ["customer_signature"]
+
+        # ---------------------------------------------------------------------
+        # 🔹 ATTACH CHILD TABLE DATA
+        # ---------------------------------------------------------------------
         for d in data:
+            name = d.get("name")
+
+            # 1️⃣ Vehicle Concern Table
+            d["vehicle_concern"] = frappe.db.get_all(
+                "Vehicle Concern",
+                filters={"parent": name},
+                fields=["vehicle_concern"]
+            )
+
+            # 2️⃣ Car Repair Images Table
+            images = frappe.db.get_all(
+                "Car Repair Images",
+                filters={"parent": name},
+                fields=["image"]
+            )
+            for img in images:
+                if img.get("image"):
+                    img["image"] = urljoin(host_url, img["image"])
+            d["car_repair_images"] = images
+
+            # 3️⃣ Car Diagnosis Detail Table (UPDATED FIELDS)
+            diagnosis_details = frappe.db.get_all(
+                "Car Repair Damage",
+                filters={"parent": name},
+                fields=[
+                    "damage_description",
+                    "part_required",
+                    "quantity",
+                    "estimated_cost",
+                    "assigned_to"
+                ]
+            )
+            d["diagnosis_details"] = diagnosis_details
+
+            # 4️⃣ full URL for parent images
             for f in image_fields:
                 if d.get(f):
                     d[f] = urljoin(host_url, d[f])
 
-        # 🔹 Total count for pagination
+        # 🔹 total count
         total_count = frappe.db.count("Car Diagnosis", filters=filters)
 
-        # 🔹 Pagination metadata
+        # 🔹 pagination metadata
         meta = {}
         if is_pagination:
             meta = {
@@ -458,11 +501,11 @@ def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", so
 
         return {
             "status": "success",
-            "status_code":200,
+            "status_code": 200,
             "data": data,
             "pagination": meta if is_pagination else None
         }
 
     except Exception as e:
-        frappe.log_error("Car Diagnosis List Error", str(e))
+        frappe.log_error("Car Diagnosis List Error", frappe.get_traceback())
         return {"status": "error", "message": str(e)}

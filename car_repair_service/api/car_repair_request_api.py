@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 import json
-from car_repair_service.api.utils import ensure_authenticated
+from car_repair_service.api.utils import get_paginated_data,ensure_authenticated
 
 # ====================================================
 # CREATE Car Repair Request (with Auto Customer + Email)
@@ -539,20 +539,114 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
 # ====================================================
 # READ / GET Car Repair Request (single or all)
 # ====================================================
+# @frappe.whitelist()
+# def get_car_repair_request(name=None, page=1, page_size=10):
+#     ensure_authenticated()
+#     """
+#     Fetch Car Repair Request(s):
+#     - If 'name' is provided → returns full document (with child tables)
+#     - If not → returns paginated list of Car Repair Requests (summary view)
+#     Supports:
+#     - Pagination: page, page_size
+#     """
+#     try:
+#         # -----------------------------------------
+#         # Fetch single record with details
+#         # -----------------------------------------
+#         if name:
+#             if not frappe.db.exists("Car Repair Request", name):
+#                 return {
+#                     "status": "error",
+#                     "message": f"Car Repair Request '{name}' not found"
+#                 }
+
+#             doc = frappe.get_doc("Car Repair Request", name)
+#             data = doc.as_dict()
+
+#             # Include child tables explicitly
+#             data["vehicle_concern"] = [
+#                 {"vehicle_concern": vc.vehicle_concern}
+#                 for vc in doc.get("vehicle_concern", [])
+#             ]
+
+#             data["car_repair_images"] = [
+#                 {"image": img.image}
+#                 for img in doc.get("car_repair_images", [])
+#             ]
+
+#             return {
+#                 "status": "success",
+#                 "status_code":200,
+#                 "message": f"Car Repair Request '{name}' fetched successfully",
+#                 "data": data
+#             }
+
+#         # -----------------------------------------
+#         # Paginated list view
+#         # -----------------------------------------
+#         page = int(page) if str(page).isdigit() else 1
+#         page_size = int(page_size) if str(page_size).isdigit() else 10
+#         start = (page - 1) * page_size
+
+#         total_records = frappe.db.count("Car Repair Request")
+
+#         records = frappe.get_all(
+#             "Car Repair Request",
+#             fields=[
+#                 "name", "customer_name", "email", "phone",
+#                 "make", "model", "license_plate","assign_adviser","car_manufacturing_year","odometer_photo",
+#                 "priority", "service_type", "repair_request_date","reason_for_repair","odometer_value","customer_signature"
+#             ],
+#             order_by="creation desc",
+#             start=start,
+#             page_length=page_size
+#         )
+
+#         total_pages = (total_records + page_size - 1) // page_size
+
+#         return {
+#             "status": "success",
+#             "message": "Car Repair Request list fetched successfully",
+#             "pagination": {
+#                 "total_records": total_records,
+#                 "page": page,
+#                 "page_size": page_size,
+#                 "total_pages": total_pages,
+#                 "has_next": page < total_pages,
+#                 "has_prev": page > 1,
+#                 "next_page": page + 1 if page < total_pages else None,
+#                 "prev_page": page - 1 if page > 1 else None,
+#             },
+#             "data": records
+#         }
+
+#     except Exception as e:
+#         frappe.log_error(title="Get Car Repair Request Error", message=str(e))
+#         return {
+#             "status": "error",
+#             "message": f"Internal Server Error: {str(e)}"
+#         }
+
+
 @frappe.whitelist()
-def get_car_repair_request(name=None, page=1, page_size=10):
+def get_car_repair_request(
+    name=None, 
+    page=1, 
+    page_size=10, 
+    sort_by="creation", 
+    sort_order="desc", 
+    search=None, 
+    is_pagination=False
+):
     ensure_authenticated()
-    """
-    Fetch Car Repair Request(s):
-    - If 'name' is provided → returns full document (with child tables)
-    - If not → returns paginated list of Car Repair Requests (summary view)
-    Supports:
-    - Pagination: page, page_size
-    """
+
     try:
-        # -----------------------------------------
-        # Fetch single record with details
-        # -----------------------------------------
+        extra_params = {"search": search} if search else {}
+        base_url = frappe.request.host_url.rstrip("/") + frappe.request.path
+
+        # -------------------------
+        # SINGLE RECORD
+        # -------------------------
         if name:
             if not frappe.db.exists("Car Repair Request", name):
                 return {
@@ -563,62 +657,86 @@ def get_car_repair_request(name=None, page=1, page_size=10):
             doc = frappe.get_doc("Car Repair Request", name)
             data = doc.as_dict()
 
-            # Include child tables explicitly
             data["vehicle_concern"] = [
                 {"vehicle_concern": vc.vehicle_concern}
                 for vc in doc.get("vehicle_concern", [])
             ]
 
             data["car_repair_images"] = [
-                {"image": img.image}
+                {"image": frappe.utils.get_url(img.image)}
                 for img in doc.get("car_repair_images", [])
             ]
 
+            if data.get("odometer_photo"):
+                data["odometer_photo"] = frappe.utils.get_url(data["odometer_photo"])
+
             return {
                 "status": "success",
-                "status_code":200,
-                "message": f"Car Repair Request '{name}' fetched successfully",
                 "data": data
             }
 
-        # -----------------------------------------
-        # Paginated list view
-        # -----------------------------------------
-        page = int(page) if str(page).isdigit() else 1
-        page_size = int(page_size) if str(page_size).isdigit() else 10
-        start = (page - 1) * page_size
+        # -------------------------
+        # PAGINATED LIST
+        # -------------------------
+        fields = [
+            "name", "customer_name", "email", "phone",
+            "make", "model", "license_plate", "assign_adviser",
+            "car_manufacturing_year", "odometer_photo",
+            "priority", "service_type", "repair_request_date",
+            "reason_for_repair", "odometer_value", "customer_signature"
+        ]
 
-        total_records = frappe.db.count("Car Repair Request")
+        search_fields = [
+            "customer_name", "make", "model", "license_plate",
+            "service_type", "priority"
+        ]
 
-        records = frappe.get_all(
-            "Car Repair Request",
-            fields=[
-                "name", "customer_name", "email", "phone",
-                "make", "model", "license_plate","assign_adviser","car_manufacturing_year","odometer_photo",
-                "priority", "service_type", "repair_request_date","reason_for_repair","odometer_value","customer_signature"
-            ],
-            order_by="creation desc",
-            start=start,
-            page_length=page_size
+        raw = get_paginated_data(
+            doctype="Car Repair Request",
+            fields=fields,
+            search=search,
+            filters={},
+            sort_by=sort_by,
+            sort_order=sort_order,
+            page=int(page),
+            page_size=int(page_size),
+            search_fields=search_fields,
+            is_pagination=frappe.utils.sbool(is_pagination),
+            base_url=base_url,
+            extra_params=extra_params
         )
 
-        total_pages = (total_records + page_size - 1) // page_size
+        # ----------------------------------------
+        # ⭐ NORMALIZE RAW RESPONSE SAFELY
+        # ----------------------------------------
+        if isinstance(raw, dict):
+            data_list = raw.get("data", [])
+        elif isinstance(raw, list):
+            data_list = raw
+            raw = {"data": raw}    # convert list → dict
+        else:
+            data_list = []
+            raw = {"data": []}
 
-        return {
-            "status": "success",
-            "message": "Car Repair Request list fetched successfully",
-            "pagination": {
-                "total_records": total_records,
-                "page": page,
-                "page_size": page_size,
-                "total_pages": total_pages,
-                "has_next": page < total_pages,
-                "has_prev": page > 1,
-                "next_page": page + 1 if page < total_pages else None,
-                "prev_page": page - 1 if page > 1 else None,
-            },
-            "data": records
-        }
+        # ----------------------------------------
+        # ⭐ Add child images + convert URLs
+        # ----------------------------------------
+        for row in data_list:
+
+            images = frappe.db.get_all(
+                "Car Repair Images",
+                filters={"parent": row["name"], "parenttype": "Car Repair Request"},
+                fields=["image"]
+            )
+
+            row["car_repair_images"] = [
+                frappe.utils.get_url(i["image"]) for i in images
+            ]
+
+            if row.get("odometer_photo"):
+                row["odometer_photo"] = frappe.utils.get_url(row["odometer_photo"])
+
+        return raw
 
     except Exception as e:
         frappe.log_error(title="Get Car Repair Request Error", message=str(e))
@@ -626,6 +744,7 @@ def get_car_repair_request(name=None, page=1, page_size=10):
             "status": "error",
             "message": f"Internal Server Error: {str(e)}"
         }
+
 
 # ====================================================
 # UPDATE Car Repair Request

@@ -410,3 +410,5 @@ def create_customer_and_vehicle(data):
 #         "email": customer.email_id,
 #         "phone": customer.mobile_no
 #     }
+
+
