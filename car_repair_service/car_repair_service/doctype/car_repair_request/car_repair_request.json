@@ -151,13 +151,11 @@
    "label": "Customer Signature"
   },
   {
-   "fetch_from": "car.make",
    "fieldname": "make",
    "fieldtype": "Data",
    "label": "Make"
   },
   {
-   "fetch_from": "car.model",
    "fieldname": "model",
    "fieldtype": "Data",
    "label": "Model"
@@ -227,7 +225,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2025-11-21 15:57:51.768908",
+ "modified": "2025-11-21 18:46:09.852533",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",
