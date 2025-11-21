@@ -7,7 +7,7 @@ from car_repair_service.api.utils import ensure_authenticated
 # ---------------------------------------------------------
 # ..............Create Book Appointment....................
 # ---------------------------------------------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_book_appointment(data):
     ensure_authenticated()
     """
@@ -193,7 +193,7 @@ def create_book_appointment(data):
 #------------------------------------------------------------------------------------    
 #.................Create Car Repair Request From Book Appointement...................  
 # -----------------------------------------------------------------------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_car_repair_request(appointment_name):
     ensure_authenticated()
     """
@@ -316,7 +316,7 @@ def get_book_appointments(page=1, page_size=10):
 # ...................Get Single Book Appointement Id..........................
 # ----------------------------------------------------------------------------
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_book_appointment(appointment_id):
     ensure_authenticated()
     """
@@ -355,7 +355,7 @@ def get_book_appointment(appointment_id):
 # -----------------------------------------------------------------
 # .................update book appointment.........................
 # -----------------------------------------------------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def update_book_appointment(appointment_id, data):
     ensure_authenticated()
     """
@@ -394,7 +394,7 @@ def update_book_appointment(appointment_id, data):
 # ------------------------------------------------------------------
 # ................Delete Book Appointement..........................
 # ------------------------------------------------------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def delete_book_appointment(appointment_id):
     ensure_authenticated()
     """

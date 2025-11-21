@@ -9,12 +9,15 @@ from car_repair_service.api.utils import get_paginated_data,ensure_authenticated
 # ---------------------------------------------------------
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_customer_and_vehicle(data=None):
     ensure_authenticated()
     try:
         print("TOKEN RECEIVED:", frappe.get_request_header("Authorization"))
         print("CURRENT USER:", frappe.session.user)
+        print("SID:", frappe.form_dict.get("sid"))
+        print("Cookie SID:", frappe.request.cookies.get("sid"))
+
         if not data:
             frappe.throw("Missing 'data' parameter")
 
@@ -116,7 +119,7 @@ def create_customer_and_vehicle(data=None):
 # -----------------------------------------------------------------
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def update_customer(customer_id=None, customer_name=None, mobile_no=None, email_id=None,
                     vehicle_id=None, license_plate=None, make=None, model=None):
     ensure_authenticated()
@@ -211,7 +214,7 @@ def update_customer(customer_id=None, customer_name=None, mobile_no=None, email_
 #......................Delete Customer...................
 # -------------------------------------------------------
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def delete_customer_and_vehicles(customer_id, force=False):
     ensure_authenticated()
     """
@@ -285,17 +288,21 @@ def delete_customer_and_vehicles(customer_id, force=False):
 # --------------------------------------------------------
 #....................List all Customers & Vehicle.........
 # --------------------------------------------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def customer_vehicle_list(page=1, page_size=10, search=None, sort_by="c.creation", sort_order="desc"):
     ensure_authenticated()
     """Return Customer + Vehicle list with pagination, search, sorting"""
-
+    print("AUTH HEADER:", frappe.request.headers.get("Authorization"))
+    print("ARGS:", frappe.form_dict)
+ 
     page = int(page)
     page_size = int(page_size)
     offset = (page - 1) * page_size
     vals = {}
     print("TOKEN RECEIVED:", frappe.get_request_header("Authorization"))
     print("CURRENT USER:", frappe.session.user)
+    print("SID:", frappe.form_dict.get("sid"))
+    print("Cookie SID:", frappe.request.cookies.get("sid"))
 
     # SEARCH FILTER
     search_filter = ""

@@ -6,7 +6,7 @@ from car_repair_service.api.utils import get_paginated_data,ensure_authenticated
 # ====================================================
 # CREATE Car Repair Request (with Auto Customer + Email)
 # ====================================================
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_car_repair_request(data):
     ensure_authenticated()
     """
@@ -247,7 +247,7 @@ def create_car_repair_request(data):
 # =======================================================
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_car_diagnosis(customer_name=None, customer=None):
     ensure_authenticated()
     """
@@ -436,7 +436,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
 # ======================================================
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_quotation_from_car_diagnosis(diagnosis_name):
     ensure_authenticated()
     """
@@ -628,7 +628,7 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
 #         }
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_car_repair_request(
     name=None, 
     page=1, 
@@ -707,7 +707,7 @@ def get_car_repair_request(
         )
 
         # ----------------------------------------
-        # ⭐ NORMALIZE RAW RESPONSE SAFELY
+        #  NORMALIZE RAW RESPONSE SAFELY
         # ----------------------------------------
         if isinstance(raw, dict):
             data_list = raw.get("data", [])
@@ -719,7 +719,7 @@ def get_car_repair_request(
             raw = {"data": []}
 
         # ----------------------------------------
-        # ⭐ Add child images + convert URLs
+        # Add child images + convert URLs
         # ----------------------------------------
         for row in data_list:
 
@@ -749,7 +749,7 @@ def get_car_repair_request(
 # ====================================================
 # UPDATE Car Repair Request
 # ====================================================
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def update_car_repair_request(name, data):
     ensure_authenticated()
     """
@@ -816,7 +816,7 @@ def update_car_repair_request(name, data):
 # ====================================================
 # DELETE Car Repair Request
 # ====================================================
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def delete_car_repair_request(name):
     ensure_authenticated()
     """

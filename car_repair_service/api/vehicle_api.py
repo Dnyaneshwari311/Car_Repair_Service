@@ -261,3 +261,14 @@ def list_vehicle(filters=None, limit_start=0, limit_page_length=10):
     except Exception as e:
         frappe.local.response.http_status_code = 500
         return {"status": "error", "message": str(e)}
+
+
+
+
+
+
+
+
+
+
+

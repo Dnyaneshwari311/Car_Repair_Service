@@ -6,7 +6,7 @@ from car_repair_service.api.utils import ensure_authenticated
 # -----------------------------
 # CREATE CAR DIAGNOSIS
 # -----------------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_car_diagnosis(customer_name=None, customer=None):
     ensure_authenticated()
     """
@@ -92,7 +92,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
 from urllib.parse import urljoin
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def car_diagnosis_get(name):
     ensure_authenticated()
     """
@@ -153,7 +153,7 @@ def car_diagnosis_get(name):
 # -----------------------------
 # UPDATE CAR DIAGNOSIS
 # -----------------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def update_car_diagnosis(name=None, data=None):
     ensure_authenticated()
     """
@@ -261,7 +261,7 @@ def update_car_diagnosis(name=None, data=None):
 # -----------------------------
 # DELETE CAR DIAGNOSIS
 # -----------------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def delete_car_diagnosis(name):
     ensure_authenticated()
     """
@@ -372,7 +372,7 @@ def delete_car_diagnosis(name):
 
 from urllib.parse import urljoin
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", sort_order="desc", is_pagination=False, **kwargs):
     ensure_authenticated()
 

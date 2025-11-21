@@ -3,7 +3,7 @@ from car_repair_service.api.utils import get_paginated_data,ensure_authenticated
 
 
 #................Create Customer...............
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_customer(customer_name, mobile_no=None, email_id=None):
     from car_repair_service.api.utils import ensure_authenticated     
     ensure_authenticated()
@@ -22,7 +22,7 @@ def create_customer(customer_name, mobile_no=None, email_id=None):
 
 #.................Get Customer...................
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_customer(search=None):
     if not search:
         return {"status": "error", "message": "Search parameter is required"}
@@ -49,7 +49,7 @@ def get_customer(search=None):
 
  
 #.....................Update Customer...............................
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def update_customer(customer_id, customer_name=None, mobile_no=None, email_id=None):
     try:
         # Fetch customer document
@@ -85,7 +85,7 @@ def update_customer(customer_id, customer_name=None, mobile_no=None, email_id=No
 
 #......................Delete Customer...................
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def delete_customer(customer_id, force=False):
     """
     Delete Customer by ID

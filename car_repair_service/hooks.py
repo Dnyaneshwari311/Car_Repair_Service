@@ -348,7 +348,8 @@ fixtures = [
                 "Autopopulate  MakeAnd Model On The Basis Of Car",
                 "Customer Getting Vehicle",
                 "Adding Customer On Car Repair Request When Not Exist",
-                "Autoppulated Chassis No On The Basis Of Chassis No"
+                "Autoppulated Chassis No On The Basis Of Chassis No",
+                "Filter Item In Car Repair According to Model"
                 
                 
             ]]

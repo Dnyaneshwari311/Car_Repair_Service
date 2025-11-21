@@ -4,10 +4,10 @@
   "doctype": "Client Script",
   "dt": "Car Repair Request",
   "enabled": 1,
-  "modified": "2025-11-18 10:57:30.915097",
+  "modified": "2025-11-21 15:13:52.162905",
   "module": null,
   "name": "Model name",
-  "script": "frappe.ui.form.on('Car Repair Request', {\n    refresh: function(frm) {\n        // Formatter to show Vehicle Model name in Car dropdown\n        frappe.form.link_formatters['Vehicle'] = function(value, doc) {\n            if (doc.model) {\n                return doc.model; // Display the model name\n            }\n            return value; // fallback\n        };\n    }\n});\n\n",
+  "script": "frappe.ui.form.on('Car Repair Request', {\n    refresh: function(frm) {\n        // Formatter to show Vehicle Model name in Car dropdown\n        frappe.form.link_formatters['Vehicle'] = function(value, doc) {\n            if (doc.model) {\n                return doc.model; // Display the model name\n            }\n            return value; // fallback\n        };\n    }\n});\n\n\n",
   "view": "Form"
  },
  {
@@ -15,10 +15,10 @@
   "doctype": "Client Script",
   "dt": "Car Repair Request",
   "enabled": 0,
-  "modified": "2025-11-18 10:56:46.404099",
+  "modified": "2025-11-21 17:37:17.547447",
   "module": null,
   "name": "Filter Car According To Model",
-  "script": "frappe.ui.form.on(\"Car Repair Request\", {\n    refresh(frm) {\n        // Automatically format car field on refresh\n        frm.fields_dict[\"car\"].get_query = function() {\n            return {\n                query: \"frappe.desk.search.search_link\",\n                filters: {\n                    doctype: \"Vehicle\"\n                }\n            };\n        };\n    }\n});\n\n// Formatter for Vehicle link field to show Make + Model\nfrappe.form.link_formatters['Vehicle'] = function(value, doc) {\n    if (doc.make && doc.model) {\n        return `${value} (${doc.make} ${doc.model})`;\n    } else {\n        return value;\n    }\n};\n",
+  "script": "frappe.ui.form.on(\"Car Repair Request\", {\n    onload(frm) {\n        set_car_filter(frm);\n\n        // Override Car field options to show Make + Model\n        frm.fields_dict.car.get_query = function() {\n            return {\n                query: \"frappe.client.get_list\",\n                filters: {},\n                fields: [\"name\", \"make\", \"model\"],\n                // You can filter by model if needed\n            };\n        };\n    },\n\n    car(frm) {\n        if (!frm.doc.car) return;\n\n        frappe.db.get_doc(\"Vehicle\", frm.doc.car).then(vehicle => {\n            frm.set_value(\"license_plate\", vehicle.license_plate);\n            frm.set_value(\"chassis_no\", vehicle.chassis_no);\n\n            // Get readable make\n            frappe.db.get_value(\"Vehicle Make\", vehicle.make, \"make\", r1 => {\n                let make_name = r1 ? r1.make : vehicle.make;\n\n                // Get readable model\n                frappe.db.get_value(\"Vehicle Model\", vehicle.model, \"model\", r2 => {\n                    let model_name = r2 ? r2.model : vehicle.model;\n\n                    frm.set_value(\"make\", make_name);\n                    frm.set_value(\"model\", model_name);\n\n                    // ✅ Show Make + Model visually in car field without changing underlying value\n                    frm.fields_dict.car.set_input(`${make_name} ${model_name}`);\n                });\n            });\n        });\n    }\n});\n\n// Filter for Car field based on model\nfunction set_car_filter(frm) {\n    frm.set_query(\"car\", function() {\n        let filters = {};\n        if (frm.doc.model) filters.model = frm.doc.model;\n        return { filters };\n    });\n}\n",
   "view": "Form"
  },
  {
@@ -48,7 +48,7 @@
   "doctype": "Client Script",
   "dt": "Car Repair Request",
   "enabled": 1,
-  "modified": "2025-11-17 18:55:55.556178",
+  "modified": "2025-11-21 17:37:23.389490",
   "module": null,
   "name": "Autopopulate  MakeAnd Model On The Basis Of Car",
   "script": "frappe.ui.form.on(\"Car Repair Request\", {\n    onload(frm) {\n        // Apply filter when form loads\n        set_car_filter(frm);\n\n        // If car already selected, populate fields\n        if (frm.doc.car) frappe.trigger(\"car\", frm);\n    },\n\n    model(frm) {\n        // Refresh car filter when model changes\n        set_car_filter(frm);\n    },\n\n    car(frm) {\n        if (frm.doc.car) {\n            frappe.db.get_doc(\"Vehicle\", frm.doc.car).then(vehicle => {\n                frm.set_value(\"license_plate\", vehicle.license_plate);\n                frm.set_value(\"chassis_no\", vehicle.chassis_no);\n\n                // Get readable make name\n                if (vehicle.make) {\n                    frappe.db.get_value(\"Vehicle Make\", vehicle.make, \"make\", (r) => {\n                        frm.set_value(\"make\", r ? r.make : vehicle.make);\n                    });\n                }\n\n                // Get readable model name\n                if (vehicle.model) {\n                    frappe.db.get_value(\"Vehicle Model\", vehicle.model, \"model\", (r) => {\n                        frm.set_value(\"model\", r ? r.model : vehicle.model);\n                    });\n                }\n\n                // ✅ Show readable value in car field (visually only)\n                let display_name = vehicle.license_plate || vehicle.model || frm.doc.car;\n                frm.fields_dict.car.$input.val(display_name);\n            });\n        }\n    }\n});\n\n// ✅ Proper filter for the Car link field\nfunction set_car_filter(frm) {\n    frm.set_query(\"car\", function() {\n        let filters = {};\n        if (frm.doc.model) filters.model = frm.doc.model;\n        return { filters };\n    });\n}\n\n\n\n",
@@ -217,6 +217,17 @@
   "module": null,
   "name": "Autoppulated Chassis No On The Basis Of Chassis No",
   "script": "frappe.ui.form.on('Car Repair Request', {\n    refresh(frm) {\n        // Ensure chassis_no is always editable\n        frm.set_df_property('chassis_no', 'read_only', 0);\n    },\n    chassis_no(frm) {\n        if (frm.doc.chassis_no) {\n            // Fetch vehicle linked by chassis_no\n            frappe.db.get_value('Vehicle', { chassis_no: frm.doc.chassis_no }, 'name')\n                .then(res => {\n                    if (res?.message?.name) {\n                        // Only set car if a match is found\n                        frm.set_value('car', res.message.name);\n                    } else {\n                        // No vehicle found -> do nothing, keep existing data\n                        // Optional: You could show a hint to the user (no message is used as you preferred)\n                    }\n                });\n        }\n    }\n});\n",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Car repair",
+  "enabled": 1,
+  "modified": "2025-11-21 12:33:13.243458",
+  "module": null,
+  "name": "Filter Item In Car Repair According to Model",
+  "script": "// frappe.ui.form.on(\"Car repair\", {\n//     refresh(frm) {\n\n//         // Filter items in Part Required based on Car Repair.model\n//         frm.fields_dict[\"list_of_damage\"].grid.get_field(\"part_required\").get_query =\n//             function(doc, cdt, cdn) {\n\n//                 return {\n//                     filters: {\n//                         vehicle_model: frm.doc.model  // <-- your final fieldname\n//                     }\n//                 };\n//             };\n//     }\n// });\n\n\n\n\nfrappe.ui.form.on(\"Car repair\", {\n    refresh(frm) {\n\n        frm.fields_dict[\"list_of_damage\"].grid.get_field(\"part_required\").get_query =\n            function(doc, cdt, cdn) {\n\n                return {\n                    filters: {\n                        model: [\"=\", get_model_id(frm.doc.model)]\n                    }\n                };\n            };\n\n        function get_model_id(model_name) {\n            let out = null;\n\n            frappe.call({\n                method: \"frappe.client.get_value\",\n                args: {\n                    doctype: \"Vehicle Model\",\n                    filters: { model: model_name },\n                    fieldname: \"name\",\n                },\n                async: false, // IMPORTANT → Allows synchronous return\n                callback: function (r) {\n                    if (r.message) {\n                        out = r.message.name;\n                    }\n                }\n            });\n\n            return out;\n        }\n    }\n});\n",
   "view": "Form"
  }
 ]

@@ -90,7 +90,9 @@ def ensure_authenticated():
     Works on all Frappe versions (v13–v15).
     """
     auth_header = frappe.get_request_header("Authorization")
-
+    print("AUTH HEADER:", auth_header)
+    print("ARGS:", frappe.form_dict)
+    print("CURRENT USER:", frappe.session.user)
     if not auth_header or not auth_header.lower().startswith("token "):
         frappe.throw("Unauthorized: Missing API token", frappe.PermissionError)
 
@@ -109,6 +111,7 @@ def ensure_authenticated():
 
         # Set current user context
         frappe.set_user(user)
+        print("TOKEN AFTER PARSE:", auth_header)
 
     except Exception:
         frappe.throw("Unauthorized: Missing or invalid API token", frappe.PermissionError)

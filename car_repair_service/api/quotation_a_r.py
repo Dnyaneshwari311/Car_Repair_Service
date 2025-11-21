@@ -313,6 +313,11 @@ def reject_quotation(quotation):
     """
     return frappe.utils.response.Response(html, status=200, mimetype="text/html")
 
+# def get_model_name(model_id):
+#     """Return Vehicle Model Name instead of Model ID."""
+#     if not model_id:
+#         return ""
+#     return frappe.db.get_value("Vehicle Model", model_id, "model") or ""
 
 # -------------------------
 # Helper: Create OR Update Car Repair
@@ -391,7 +396,11 @@ def create_or_update_car_repair(q):
 
         repair.car_diagnosis = diagnosis.name
         repair.car = diagnosis.get("car")
-        repair.model = vehicle.model if vehicle else ""
+        # repair.model = vehicle.model if vehicle else ""
+        # repair.model = get_model_name(vehicle.model) if vehicle else ""
+        repair.model = frappe.db.get_value("Vehicle Model", vehicle.model, "model")
+
+
         repair.license_plate = vehicle.license_plate if vehicle else ""
         repair.customer_name = customer_name
         repair.email = email
@@ -433,6 +442,8 @@ def create_or_update_car_repair(q):
         "car_diagnosis": diagnosis.name,
         "car": diagnosis.get("car"),
         "model": vehicle.model if vehicle else "",
+        # "model": get_model_name(vehicle.model) if vehicle else "",
+        
         "license_plate": vehicle.license_plate if vehicle else "",
         "customer_name": customer_name,
         "email": email,
