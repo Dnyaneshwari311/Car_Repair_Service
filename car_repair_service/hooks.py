@@ -345,7 +345,7 @@ fixtures = [
                 "Create Car Repair Request From Book Appointement",
                 "Model name",
                 "Filter Car According To Model",
-                "Autopopulate  MakeAnd Model On The Basis Of Car",
+                "Autopopulate MakeAnd Model On The Basis Of Car",
                 "Customer Getting Vehicle",
                 "Adding Customer On Car Repair Request When Not Exist",
                 "Autoppulated Chassis No On The Basis Of Chassis No",
