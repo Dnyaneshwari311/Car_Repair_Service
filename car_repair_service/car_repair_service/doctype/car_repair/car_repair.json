@@ -60,6 +60,7 @@
   {
    "fieldname": "car",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Car"
   },
   {
@@ -121,6 +122,7 @@
   {
    "fieldname": "car_diagnosis",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Car Diagnosis",
    "options": "Car Diagnosis"
   },
@@ -169,7 +171,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-21 12:31:55.816765",
+ "modified": "2025-11-24 14:30:02.018675",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car repair",
