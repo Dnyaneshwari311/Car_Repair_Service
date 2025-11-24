@@ -398,6 +398,7 @@ def create_or_update_car_repair(q):
         repair.car = diagnosis.get("car")
         # repair.model = vehicle.model if vehicle else ""
         # repair.model = get_model_name(vehicle.model) if vehicle else ""
+        # repair.model = frappe.db.get_value("Vehicle Model", vehicle.model, "model")
         repair.model = frappe.db.get_value("Vehicle Model", vehicle.model, "model")
 
 
@@ -441,9 +442,10 @@ def create_or_update_car_repair(q):
         "doctype": "Car repair",
         "car_diagnosis": diagnosis.name,
         "car": diagnosis.get("car"),
-        "model": vehicle.model if vehicle else "",
+        # "model": vehicle.model if vehicle else "",
         # "model": get_model_name(vehicle.model) if vehicle else "",
-        
+        "model": frappe.db.get_value("Vehicle Model", vehicle.model, "model") if vehicle else "",
+
         "license_plate": vehicle.license_plate if vehicle else "",
         "customer_name": customer_name,
         "email": email,
