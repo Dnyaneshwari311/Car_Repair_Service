@@ -1,14 +1,15 @@
 import frappe
 from frappe import _
 import json
-from car_repair_service.api.utils import get_paginated_data,ensure_authenticated
+from car_repair_service.api.utils import get_paginated_data
 
 # ====================================================
 # CREATE Car Repair Request (with Auto Customer + Email)
 # ====================================================
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def create_car_repair_request(data):
-    ensure_authenticated()
+    
+    
     """
     Create a new Car Repair Request:
     - Auto-creates Customer if not exists
@@ -247,9 +248,9 @@ def create_car_repair_request(data):
 # =======================================================
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def create_car_diagnosis(customer_name=None, customer=None):
-    ensure_authenticated()
+    
     """
     Create a Car Diagnosis record:
     - Prefill from last Car Repair Request for this customer
@@ -436,9 +437,9 @@ def create_car_diagnosis(customer_name=None, customer=None):
 # ======================================================
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def create_quotation_from_car_diagnosis(diagnosis_name):
-    ensure_authenticated()
+    
     """
     API: Create a Quotation from a Car Diagnosis record.
     Returns the created Quotation name.
@@ -628,7 +629,7 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
 #         }
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def get_car_repair_request(
     name=None, 
     page=1, 
@@ -638,7 +639,7 @@ def get_car_repair_request(
     search=None, 
     is_pagination=False
 ):
-    ensure_authenticated()
+    
 
     try:
         extra_params = {"search": search} if search else {}
@@ -749,9 +750,9 @@ def get_car_repair_request(
 # ====================================================
 # UPDATE Car Repair Request
 # ====================================================
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def update_car_repair_request(name, data):
-    ensure_authenticated()
+   
     """
     Update an existing Car Repair Request.
     - Supports partial updates (only provided fields)
@@ -816,9 +817,9 @@ def update_car_repair_request(name, data):
 # ====================================================
 # DELETE Car Repair Request
 # ====================================================
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def delete_car_repair_request(name):
-    ensure_authenticated()
+    
     """
     Delete an existing Car Repair Request by name.
     Safe delete with existence check and error handling.

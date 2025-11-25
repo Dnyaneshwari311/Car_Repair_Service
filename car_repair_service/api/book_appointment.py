@@ -1,15 +1,14 @@
 import frappe
 from frappe import _
 from frappe.utils import nowdate, now_datetime
-from car_repair_service.api.utils import ensure_authenticated
 
 
 # ---------------------------------------------------------
 # ..............Create Book Appointment....................
 # ---------------------------------------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def create_book_appointment(data):
-    ensure_authenticated()
+   
     """
     Create a new Book Appointment with validation.
     Auto-create Customer, Vehicle Make, Vehicle Model, and Vehicle if not found.
@@ -193,9 +192,9 @@ def create_book_appointment(data):
 #------------------------------------------------------------------------------------    
 #.................Create Car Repair Request From Book Appointement...................  
 # -----------------------------------------------------------------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def create_car_repair_request(appointment_name):
-    ensure_authenticated()
+   
     """
     Create a Car Repair Request from a Book Appointment
     """
@@ -257,9 +256,9 @@ def create_car_repair_request(appointment_name):
 # -------------------------------------------------------------------------------------
 # .....................Get List Of Book Appointment,pagination,........................
 # -------------------------------------------------------------------------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=False)
 def get_book_appointments(page=1, page_size=10):
-    ensure_authenticated()
+    
     """
     Get a paginated list of Book Appointments,
     including make and model details.
@@ -316,9 +315,9 @@ def get_book_appointments(page=1, page_size=10):
 # ...................Get Single Book Appointement Id..........................
 # ----------------------------------------------------------------------------
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def get_book_appointment(appointment_id):
-    ensure_authenticated()
+   
     """
     Get a single Book Appointment by ID,
     including make and model details.
@@ -355,9 +354,9 @@ def get_book_appointment(appointment_id):
 # -----------------------------------------------------------------
 # .................update book appointment.........................
 # -----------------------------------------------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def update_book_appointment(appointment_id, data):
-    ensure_authenticated()
+    
     """
     Update an existing Book Appointment.
     Expects JSON data (stringified) in 'data' — may include make, model, etc.
@@ -394,9 +393,9 @@ def update_book_appointment(appointment_id, data):
 # ------------------------------------------------------------------
 # ................Delete Book Appointement..........................
 # ------------------------------------------------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def delete_book_appointment(appointment_id):
-    ensure_authenticated()
+   
     """
     Delete a Book Appointment by ID.
     Example:

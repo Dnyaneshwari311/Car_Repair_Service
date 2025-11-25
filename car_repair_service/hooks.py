@@ -252,6 +252,9 @@ app_license = "mit"
 # }
 # frappe-cars/frappe_cars/hooks.py
 
+# before_request = ["car_repair_service.api.utils.check_authorization"]
+
+
 permission_query_conditions = {
     "Car repair": "car_repair_service.api.car_repair.get_permission_query_conditions",
     "Car Repair Request": "car_repair_service.api.assign_adviser.get_permission_query_conditions",

@@ -1,13 +1,16 @@
 import frappe
 from frappe import _
 import json
+from car_repair_service.api.utils import get_paginated_data
+
 
 # -------------------------
 # Create Vehicle
 # -------------------------_
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def create_vehicle(data=None):
+    
     try:
         if not data:
             data = frappe.request.get_json(silent=True)
@@ -84,8 +87,9 @@ def create_vehicle(data=None):
 # -------------------------
 # Get Vehicle by License Plate
 # -------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def get_vehicle(license_plate):
+   
     """
     Fetch a single vehicle using its license_plate.
     """
@@ -103,8 +107,9 @@ def get_vehicle(license_plate):
 # -------------------------
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def update_vehicle(license_plate, data=None):
+  
     """
     Update vehicle details. Only passed fields will be updated.
     Example JSON:
@@ -184,8 +189,9 @@ def update_vehicle(license_plate, data=None):
 # -------------------------
 # Delete Vehicle
 # -------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def delete_vehicle(license_plate):
+    
     """
     Delete a vehicle by license_plate.
     """
@@ -212,8 +218,9 @@ def delete_vehicle(license_plate):
 
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def list_vehicle(filters=None, limit_start=0, limit_page_length=10):
+   
     """
     Fetch paginated list of vehicles with optional filters.
     Example:

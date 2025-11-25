@@ -1,14 +1,14 @@
 import frappe
 from frappe import _
-from car_repair_service.api.utils import ensure_authenticated
+# from car_repair_service.api.utils import ensure_authenticated
 
 
 # -----------------------------
 # CREATE CAR DIAGNOSIS
 # -----------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def create_car_diagnosis(customer_name=None, customer=None):
-    ensure_authenticated()
+    
     """
     Create a Car Diagnosis record:
     - Prefill from last Car Repair Request for this customer
@@ -92,9 +92,9 @@ def create_car_diagnosis(customer_name=None, customer=None):
 from urllib.parse import urljoin
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def car_diagnosis_get(name):
-    ensure_authenticated()
+    
     """
     Get Car Diagnosis by name (primary key)
     Returns details with child tables and full URLs for image fields
@@ -153,9 +153,9 @@ def car_diagnosis_get(name):
 # -----------------------------
 # UPDATE CAR DIAGNOSIS
 # -----------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def update_car_diagnosis(name=None, data=None):
-    ensure_authenticated()
+   
     """
     Update an existing Car Diagnosis record.
     - Updates main fields and Car Diagnosis Detail child table.
@@ -261,9 +261,9 @@ def update_car_diagnosis(name=None, data=None):
 # -----------------------------
 # DELETE CAR DIAGNOSIS
 # -----------------------------
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def delete_car_diagnosis(name):
-    ensure_authenticated()
+    
     """
     Delete a Car Diagnosis record.
     """
@@ -372,10 +372,9 @@ def delete_car_diagnosis(name):
 
 from urllib.parse import urljoin
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=False)
 def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", sort_order="desc", is_pagination=False, **kwargs):
-    ensure_authenticated()
-
+    
     try:
         is_pagination = frappe.utils.sbool(is_pagination)
         base_url = frappe.request.host_url.rstrip("/") + frappe.request.path

@@ -1,11 +1,13 @@
 import frappe
 from frappe import _
+from car_repair_service.api.utils import get_paginated_data
 
 # ----------------------
 # CREATE QUOTATION
 # ----------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=False)
 def create_quotation(data):
+    
     """
     Create a Quotation from JSON data.
     Example data:
@@ -61,8 +63,9 @@ def create_quotation(data):
 # UPDATE QUOTATION
 # ----------------------
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=False)
 def update_quotation(quotation_name, data):
+    
     """
     Add new items to an existing Quotation without removing existing items.
     """
@@ -111,8 +114,9 @@ def update_quotation(quotation_name, data):
 # ----------------------
 # GET QUOTATION BY ID
 # ----------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=False)
 def get_quotation(quotation_name):
+   
     """
     Get Quotation details by name
     """
@@ -131,8 +135,9 @@ def get_quotation(quotation_name):
 
 from urllib.parse import urljoin
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=False)
 def quotation_list(page=1, page_size=10, search=None, sort_by="creation", sort_order="desc", is_pagination=False, **kwargs):
+   
     """
     Fetch paginated Quotation list with items, search, and sorting.
     """
@@ -246,8 +251,9 @@ def quotation_list(page=1, page_size=10, search=None, sort_by="creation", sort_o
 # ----------------------
 # DELETE QUOTATION
 # ----------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=False)
 def delete_quotation(quotation_name):
+    
     """
     Delete a Quotation by name
     """
