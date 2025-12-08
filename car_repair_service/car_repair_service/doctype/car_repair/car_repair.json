@@ -73,6 +73,7 @@
   {
    "fieldname": "car_manufacturing_year",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Car Manufacturing Year"
   },
   {
@@ -171,7 +172,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-24 14:30:02.018675",
+ "modified": "2025-12-08 18:34:42.946003",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car repair",
