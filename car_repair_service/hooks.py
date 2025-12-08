@@ -406,7 +406,8 @@ fixtures = [
                 "Item",
                 "Sales Invoice",
                 "Sales Invoice Item",
-                "Vehicle"
+                "Vehicle",
+                "employee"
             ]]
         ]
     },
