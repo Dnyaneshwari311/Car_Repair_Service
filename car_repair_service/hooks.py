@@ -422,7 +422,7 @@ fixtures = [
     {
         "doctype": "Role",
         "filters": {
-            "name": ["in", ["Assign Advisor"]]
+            "name": ["in", ["Assign Advisor","Receptionist"]]
         }
     }
 ]
