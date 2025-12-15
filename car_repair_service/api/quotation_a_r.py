@@ -478,7 +478,7 @@ def create_or_update_car_repair(q):
         "list_of_damage": [],
         "vehicle_concern": []  # 🆕 child table
     }
-    repair.assign_adviser = employee
+    
     repair = frappe.get_doc(new_repair_data)
     repair.insert(ignore_permissions=True)  
     
