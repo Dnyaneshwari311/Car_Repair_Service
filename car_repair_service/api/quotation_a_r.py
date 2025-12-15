@@ -429,7 +429,7 @@ def create_or_update_car_repair(q):
         repair.estimated_delivery_time = delivery_time
         repair.vehicle_pick_up = vehicle_pick_up
         repair.customer_signature = existing_signature  # 🆕 sync signature
-        repair.assign_adviser = employee
+        # repair.assign_adviser = employee
         # Replace list_of_damage
         repair.set("list_of_damage", [])
         for row in child_rows:
@@ -451,7 +451,7 @@ def create_or_update_car_repair(q):
         repair.save(ignore_permissions=True)
         frappe.db.commit()
         return repair.name
-    employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+    
 
     # -------------------------------------------------------------
     # CREATE NEW CAR REPAIR
@@ -474,7 +474,7 @@ def create_or_update_car_repair(q):
         "estimated_delivery_time": delivery_time,
         "vehicle_pick_up": vehicle_pick_up,  # 🆕 checkbox
         "customer_signature": customer_signature,  # 🆕 signature
-        "assign_adviser": employee,
+        # "assign_adviser": employee,
         "list_of_damage": [],
         "vehicle_concern": []  # 🆕 child table
     }
