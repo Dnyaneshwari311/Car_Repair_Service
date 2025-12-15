@@ -151,7 +151,6 @@
   {
    "fieldname": "assign_adviser",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Assign Adviser",
    "options": "Employee"
   },
@@ -172,7 +171,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-08 18:34:42.946003",
+ "modified": "2025-12-10 18:03:23.740821",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car repair",

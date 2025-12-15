@@ -30,6 +30,7 @@
   "driver_name",
   "driver_mob_no",
   "odometer_value",
+  "odometer_value_current",
   "fuel_level",
   "vehicle_pick_up",
   "pick_up_address",
@@ -177,7 +178,7 @@
   {
    "fieldname": "odometer_value",
    "fieldtype": "Int",
-   "label": "Odometer Value (Last)"
+   "label": "Odometer Value (Current)"
   },
   {
    "fieldname": "fuel_type",
@@ -215,6 +216,11 @@
    "fieldtype": "Attach Image",
    "label": "Odometer Photo",
    "reqd": 1
+  },
+  {
+   "fieldname": "odometer_value_current",
+   "fieldtype": "Int",
+   "label": "Odometer Value (Last)"
   }
  ],
  "grid_page_length": 50,
@@ -225,7 +231,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2025-11-21 18:46:09.852533",
+ "modified": "2025-12-12 12:26:10.180574",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",

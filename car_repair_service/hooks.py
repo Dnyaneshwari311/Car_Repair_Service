@@ -352,7 +352,9 @@ fixtures = [
                 "Customer Getting Vehicle",
                 "Adding Customer On Car Repair Request When Not Exist",
                 "Autoppulated Chassis No On The Basis Of Chassis No",
-                "Filter Item In Car Repair According to Model"
+                "Filter Item In Car Repair According to Model",
+                "Update Esimated Cost On Car Diagnosis According To Quantity",
+                "Fetch Odometer value"
                 
                 
             ]]

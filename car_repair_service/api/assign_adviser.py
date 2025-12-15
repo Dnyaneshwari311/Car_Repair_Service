@@ -21,28 +21,75 @@
 
 
 
+# import frappe
+
+# def get_permission_query_conditions(user, doctype):
+#     if not user:
+#         user = frappe.session.user
+
+#     # Full access for Administrator & System Manager
+#     if user == "Administrator" or "System Manager" in frappe.get_roles(user):
+#         return ""
+
+#     # Restrict Assign Advisor role
+#     if "Assign Advisor" in frappe.get_roles(user):
+#         employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
+#         if not employee:
+#             return "1=0"
+
+#         # Apply only on specific doctypes
+#         if doctype in ["Car Repair Request", "Car Diagnosis", "Car Repair"]:
+#             return f"`tab{doctype}`.`assign_adviser` = '{employee}'"
+
+#         # Any other DocType -> block
+#         return "1=0"
+
+#     # No other users allowed
+#     return "1=0"
+
+
+
+
 import frappe
 
 def get_permission_query_conditions(user, doctype):
     if not user:
         user = frappe.session.user
 
-    # Full access for Administrator & System Manager
-    if user == "Administrator" or "System Manager" in frappe.get_roles(user):
+    roles = frappe.get_roles(user)
+
+    # Admin & System Manager → full access
+    if user == "Administrator" or "System Manager" in roles:
         return ""
 
-    # Restrict Assign Advisor role
-    if "Assign Advisor" in frappe.get_roles(user):
+    # Assign Advisor role
+    if "Assign Advisor" in roles:
         employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
         if not employee:
             return "1=0"
 
-        # Apply only on specific doctypes
-        if doctype in ["Car Repair Request", "Car Diagnosis", "Car Repair"]:
-            return f"`tab{doctype}`.`assign_adviser` = '{employee}'"
+        # Show only docs assigned to him
+        return f"`tab{doctype}`.`assign_adviser` = '{employee}'"
 
-        # Any other DocType -> block
-        return "1=0"
-
-    # No other users allowed
+    # Others → no access
     return "1=0"
+
+
+def has_permission(doc, user):
+    roles = frappe.get_roles(user)
+
+    # Admin & System Manager → full access
+    if user == "Administrator" or "System Manager" in roles:
+        return True
+
+    # Assign Advisor role
+    if "Assign Advisor" in roles:
+        employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
+        if not employee:
+            return False
+
+        # Allow the user only if assigned adviser matches
+        return doc.assign_adviser == employee
+
+    # Others → no access
+    return False

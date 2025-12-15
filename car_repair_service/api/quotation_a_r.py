@@ -363,12 +363,29 @@ def create_or_update_car_repair(q):
     child_rows = []
     for qi in quotation_items:
         qi = qi.as_dict() if hasattr(qi, "as_dict") else dict(qi)
+        # child_rows.append({
+        #     "damage_description": qi.get("description") or qi.get("item_name") or "",
+        #     "assigned_to": qi.get("assigned_to") or "",
+        #     "part_required": qi.get("item_code") or qi.get("item_name") or "",
+        #     "estimated_cost": qi.get("amount") or qi.get("rate") or 0
+        # })
+        
+        
         child_rows.append({
             "damage_description": qi.get("description") or qi.get("item_name") or "",
             "assigned_to": qi.get("assigned_to") or "",
             "part_required": qi.get("item_code") or qi.get("item_name") or "",
-            "estimated_cost": qi.get("amount") or qi.get("rate") or 0
+            
+            # Quantity from quotation item
+            "quantity": qi.get("qty") or 0,
+
+            # Estimated cost = quotation rate or amount
+            "estimated_cost": qi.get("rate") or qi.get("amount") or 0,
+
+            # Amount = qty × rate
+            "amount": (qi.get("qty") or 0) * (qi.get("rate") or 0)
         })
+
 
     # ✅ COMMON FIELDS from Car Diagnosis
     delivery_date = diagnosis.get("estimated_delivery_date")
@@ -412,6 +429,7 @@ def create_or_update_car_repair(q):
         repair.estimated_delivery_time = delivery_time
         repair.vehicle_pick_up = vehicle_pick_up
         repair.customer_signature = existing_signature  # 🆕 sync signature
+        repair.assign_adviser = diagnosis.get("assign_adviser")
 
         # Replace list_of_damage
         repair.set("list_of_damage", [])
@@ -434,6 +452,7 @@ def create_or_update_car_repair(q):
         repair.save(ignore_permissions=True)
         frappe.db.commit()
         return repair.name
+    employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
 
     # -------------------------------------------------------------
     # CREATE NEW CAR REPAIR
@@ -456,12 +475,14 @@ def create_or_update_car_repair(q):
         "estimated_delivery_time": delivery_time,
         "vehicle_pick_up": vehicle_pick_up,  # 🆕 checkbox
         "customer_signature": customer_signature,  # 🆕 signature
+        "assign_adviser": employee,
         "list_of_damage": [],
         "vehicle_concern": []  # 🆕 child table
     }
-
+    repair.assign_adviser = employee
     repair = frappe.get_doc(new_repair_data)
-
+    repair.insert(ignore_permissions=True)  
+    
     # Add damages
     for row in child_rows:
         repair.append("list_of_damage", row)
@@ -477,7 +498,7 @@ def create_or_update_car_repair(q):
         or q.get("total")
         or 0
     )
-
+    
     repair.insert(ignore_permissions=True)
     frappe.db.commit()
     return repair.name
