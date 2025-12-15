@@ -136,7 +136,8 @@
   {
    "fieldname": "customer_signature",
    "fieldtype": "Signature",
-   "label": "Customer Signature"
+   "label": "Customer Signature",
+   "read_only": 1
   },
   {
    "fieldname": "estimated_delivery_date",
@@ -171,7 +172,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-10 18:03:23.740821",
+ "modified": "2025-12-15 16:31:53.594782",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car repair",
