@@ -475,7 +475,7 @@ def create_or_update_car_repair(q):
         "estimated_delivery_time": delivery_time,
         "vehicle_pick_up": vehicle_pick_up,  # 🆕 checkbox
         "customer_signature": customer_signature,  # 🆕 signature
-        "assign_adviser": employee,
+        # "assign_adviser": employee,
         "list_of_damage": [],
         "vehicle_concern": []  # 🆕 child table
     }
