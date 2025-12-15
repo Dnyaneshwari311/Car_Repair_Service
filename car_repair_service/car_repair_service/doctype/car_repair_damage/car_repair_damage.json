@@ -28,7 +28,7 @@
    "fieldname": "estimated_cost",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Estimated Cost",
+   "label": "Rate",
    "options": "currency"
   },
   {
@@ -82,7 +82,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-12-12 14:21:40.517151",
+ "modified": "2025-12-15 14:41:25.977662",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Damage",
