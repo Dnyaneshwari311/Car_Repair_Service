@@ -33,6 +33,11 @@
   "odometer_value_current",
   "fuel_level",
   "vehicle_pick_up",
+  "vehicle_pickup_required",
+  "pickup_address",
+  "assigned_to",
+  "same_as_pick_up_address",
+  "drop_address",
   "pick_up_address",
   "customer_signature",
   "car_repair_images",
@@ -137,11 +142,13 @@
    "default": "0",
    "fieldname": "vehicle_pick_up",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Vehicle Pick Up"
   },
   {
    "fieldname": "pick_up_address",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Pick Up Address",
    "read_only": 1
   },
@@ -221,6 +228,34 @@
    "fieldname": "odometer_value_current",
    "fieldtype": "Int",
    "label": "Odometer Value (Last)"
+  },
+  {
+   "fieldname": "vehicle_pickup_required",
+   "fieldtype": "Select",
+   "label": "Vehicle Pickup Required",
+   "options": "No, I'll bring it\nYes, Pickup my vehicle"
+  },
+  {
+   "fieldname": "pickup_address",
+   "fieldtype": "Small Text",
+   "label": "Pickup Address"
+  },
+  {
+   "fieldname": "drop_address",
+   "fieldtype": "Small Text",
+   "label": "Drop Address"
+  },
+  {
+   "default": "0",
+   "fieldname": "same_as_pick_up_address",
+   "fieldtype": "Check",
+   "label": "Same As Pick Up Address"
+  },
+  {
+   "fieldname": "assigned_to",
+   "fieldtype": "Link",
+   "label": "Assigned To",
+   "options": "Employee"
   }
  ],
  "grid_page_length": 50,
@@ -231,7 +266,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2025-12-15 16:12:24.115178",
+ "modified": "2025-12-15 17:46:08.541734",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",

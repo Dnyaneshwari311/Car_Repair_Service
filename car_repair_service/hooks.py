@@ -354,7 +354,8 @@ fixtures = [
                 "Autoppulated Chassis No On The Basis Of Chassis No",
                 "Filter Item In Car Repair According to Model",
                 "Update Esimated Cost On Car Diagnosis According To Quantity",
-                "Fetch Odometer value"
+                "Fetch Odometer value",
+                "Vehicle Pick Up Required Same Like Bokk Appointement"
                 
                 
             ]]

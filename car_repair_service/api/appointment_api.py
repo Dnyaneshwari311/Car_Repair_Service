@@ -274,7 +274,13 @@ def create_car_repair_request(appointment_name):
             "appointment": appointment.name,
             "status": "Open",
             "odometer_photo": odometer_photo,
-            "customer_signature": appointment.get("customer_signature") or None
+            "customer_signature": appointment.get("customer_signature") or None,
+            # 🚗 VEHICLE PICKUP (THIS WAS MISSING)
+            "vehicle_pickup_required": appointment.vehicle_pickup_required,
+            "pickup_address": appointment.pickup_address,
+            "same_as_pick_up_address": appointment.same_as_pick_up_address or 0,
+            "drop_address": appointment.drop_address,
+            "assigned_to": appointment.assigned_to
         })
 
         # -------------------------------
