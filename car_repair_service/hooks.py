@@ -264,6 +264,7 @@ permission_query_conditions = {
 
 
 
+
 # doc_events = {
 #     "Quotation": {
 #         "after_insert": "car_repair_service.api.quotation_mail.send_quotation_created_email",

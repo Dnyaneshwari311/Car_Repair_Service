@@ -602,6 +602,16 @@ def create_or_update_car_repair(q):
         concern_rows.append({
             "vehicle_concern": c.get("vehicle_concern") or ""
         })
+    employee = None
+
+    # 1️⃣ Check if Quotation has an assigned adviser
+    if q.get("assign_adviser"):
+        employee = q.get("assign_adviser")
+
+    # 2️⃣ Otherwise, use current logged-in user if linked to Employee
+    if not employee:
+        employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+
 
     # -------------------------------------------------------------
     # UPDATE EXISTING CAR REPAIR
@@ -627,6 +637,8 @@ def create_or_update_car_repair(q):
         repair.estimated_delivery_time = delivery_time
         repair.vehicle_pick_up = vehicle_pick_up
         repair.customer_signature = existing_signature
+        repair.assign_adviser = employee
+
 
         # 🔥 REPLACE DAMAGES
         repair.set("list_of_damage", [])
@@ -671,6 +683,7 @@ def create_or_update_car_repair(q):
         "estimated_delivery_time": delivery_time,
         "vehicle_pick_up": vehicle_pick_up,
         "customer_signature": customer_signature,
+        "assign_adviser": employee,
         "list_of_damage": [],
         "vehicle_concern": []
     })
