@@ -463,7 +463,23 @@ def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", so
                     img["image"] = urljoin(host_url, img["image"])
             d["car_repair_images"] = images
 
-            # 3️⃣ Car Diagnosis Detail Table (UPDATED FIELDS)
+            # # 3️⃣ Car Diagnosis Detail Table (UPDATED FIELDS)
+            # diagnosis_details = frappe.db.get_all(
+            #     "Car Repair Damage",
+            #     filters={"parent": name},
+            #     fields=[
+            #         "damage_description",
+            #         "part_required",
+            #         "quantity",
+            #         "estimated_cost",
+            #         "assigned_to"
+            #     ]
+            # )
+            # d["diagnosis_details"] = diagnosis_details
+            
+            
+                        
+            # 3️⃣ Car Diagnosis Detail Table (WITH AMOUNT)
             diagnosis_details = frappe.db.get_all(
                 "Car Repair Damage",
                 filters={"parent": name},
@@ -472,10 +488,20 @@ def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", so
                     "part_required",
                     "quantity",
                     "estimated_cost",
+                    "amount",
                     "assigned_to"
                 ]
             )
+
+            # Safety fallback (if old records exist)
+            for row in diagnosis_details:
+                qty = frappe.utils.flt(row.get("quantity"))
+                cost = frappe.utils.flt(row.get("estimated_cost"))
+                if not row.get("amount"):
+                    row["amount"] = qty * cost if qty > 0 and cost > 0 else 0
+
             d["diagnosis_details"] = diagnosis_details
+
 
             # 4️⃣ full URL for parent images
             for f in image_fields:
