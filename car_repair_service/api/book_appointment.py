@@ -405,19 +405,82 @@ def create_car_repair_request(appointment_name):
 # -------------------------------------------------------------------------------------
 # .....................Get List Of Book Appointment,pagination,........................
 # -------------------------------------------------------------------------------------
-@frappe.whitelist(allow_guest=False)
-def get_book_appointments(page=1, page_size=10):
+# @frappe.whitelist(allow_guest=False)
+# def get_book_appointments(page=1, page_size=10):
     
+#     """
+#     Get a paginated list of Book Appointments,
+#     including make and model details.
+#     """
+#     try:
+#         page = int(page)
+#         page_size = int(page_size)
+
+#         appointments = frappe.get_all(
+#             "Book Appointment",
+#             fields=[
+#                 "name",
+#                 "customer_name",
+#                 "email",
+#                 "phone",
+#                 "license_plate",
+#                 "make",
+#                 "model",
+#                 "service_type",
+#                 "appointment_date",
+#                 "appointment_time",
+#                 "vehicle_pickup_required",
+#                 "pickup_address",
+#                 "status",
+#                 "creation",
+#                 "modified"
+#             ],
+#             start=(page - 1) * page_size,
+#             page_length=page_size,
+#             order_by="creation desc"
+#         )
+
+#         total_records = frappe.db.count("Book Appointment")
+#         total_pages = (total_records + page_size - 1) // page_size
+
+#         return {
+#             "status": "success",
+#             "pagination": {
+#                 "current_page": page,
+#                 "page_size": page_size,
+#                 "total_records": total_records,
+#                 "total_pages": total_pages
+#             },
+#             "data": appointments
+#         }
+
+#     except Exception as e:
+#         frappe.log_error(message=str(e), title="Fetch Appointments Error")
+#         return {"status": "error", "message": str(e)}
+
+
+
+
+
+
+@frappe.whitelist(allow_guest=False)
+def get_book_appointments(page=1, page_size=10, status=None):
     """
-    Get a paginated list of Book Appointments,
-    including make and model details.
+    Get a paginated list of Book Appointments
+    with optional status-wise filtering.
     """
     try:
         page = int(page)
         page_size = int(page_size)
 
+        # Build filters dynamically
+        filters = {}
+        if status:
+            filters["status"] = status
+
         appointments = frappe.get_all(
             "Book Appointment",
+            filters=filters,
             fields=[
                 "name",
                 "customer_name",
@@ -440,11 +503,15 @@ def get_book_appointments(page=1, page_size=10):
             order_by="creation desc"
         )
 
-        total_records = frappe.db.count("Book Appointment")
+        # Count with same filters
+        total_records = frappe.db.count("Book Appointment", filters=filters)
         total_pages = (total_records + page_size - 1) // page_size
 
         return {
             "status": "success",
+            "filters": {
+                "status": status or "All"
+            },
             "pagination": {
                 "current_page": page,
                 "page_size": page_size,
