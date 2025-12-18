@@ -302,7 +302,7 @@ def reset_password():
         return {
             "status": "success",
             "status_code": 201,
-            "msg": ("Password updated successfully")
+            "message": ("Password updated successfully")
         }
 
     except frappe.AuthenticationError:
