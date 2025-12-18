@@ -147,7 +147,7 @@ def quotation_list(page=1, page_size=10, search=None, sort_by="creation", sort_o
         del kwargs["cmd"]
 
         # Searchable fields
-        search_fields = ["name", "customer_name", "car_diagnosis"]
+        search_fields = ["name", "customer_name", "custom_car_diagnosis"]
 
         # Fields to return
         return_fields = [
@@ -156,7 +156,7 @@ def quotation_list(page=1, page_size=10, search=None, sort_by="creation", sort_o
             "customer_name",
             "valid_till",
             "order_type",
-            "car_diagnosis",
+            "custom_car_diagnosis",
             "grand_total",
             "status",
             "creation",
