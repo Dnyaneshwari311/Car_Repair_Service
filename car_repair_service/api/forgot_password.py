@@ -34,7 +34,7 @@ def send_forgot_password_otp(email):
     return {
         "status": "success",
         "status_code": 201,
-        "msg": "OTP sent to your email."
+        "message": "OTP sent to your email."
     }
 
 
@@ -84,7 +84,7 @@ def verify_forgot_password_otp(email, otp):
     return {
         "status": "success",
         "status_code": 200,
-        "msg": "OTP verified successfully."
+        "message": "OTP verified successfully."
     }
 
 
@@ -128,7 +128,7 @@ def reset_password_with_otp(email, otp, new_password, confirm_password):
     return {
         "status": "success",
         "status_code": 200,
-        "msg": "Password updated successfully."
+        "message": "Password updated successfully."
     }
 
 
