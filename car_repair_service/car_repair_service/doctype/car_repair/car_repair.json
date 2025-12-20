@@ -165,6 +165,7 @@
    "default": "0",
    "fieldname": "vehicle_pick_up",
    "fieldtype": "Check",
+   "hidden": 1,
    "in_list_view": 1,
    "label": "Vehicle Pick Up"
   }
@@ -172,7 +173,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-15 16:31:53.594782",
+ "modified": "2025-12-20 15:18:07.797615",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car repair",

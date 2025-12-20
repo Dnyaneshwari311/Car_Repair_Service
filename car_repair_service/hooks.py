@@ -259,7 +259,8 @@ permission_query_conditions = {
     "Car repair": "car_repair_service.api.car_repair.get_permission_query_conditions",
     "Car Repair Request": "car_repair_service.api.assign_adviser.get_permission_query_conditions",
     "Car Diagnosis": "car_repair_service.api.assign_adviser.get_permission_query_conditions",
-    "Car Repair": "car_repair_service.api.assign_adviser.get_permission_query_conditions"
+    "Car Repair": "car_repair_service.api.assign_adviser.get_permission_query_conditions",
+    "Book Appointment": "car_repair_service.api.permission.book_appointment_permission"
 }
 
 
