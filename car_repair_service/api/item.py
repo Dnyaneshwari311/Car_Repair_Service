@@ -185,3 +185,109 @@ def list_items(
         "page": page,
         "page_size": page_size
     }
+
+
+
+
+
+
+@frappe.whitelist(methods=["PUT", "POST"])
+def update_item(data=None):
+    """
+    Update Item safely
+    """
+    try:
+        if not data:
+            data = frappe.form_dict
+
+        if isinstance(data, str):
+            data = frappe.parse_json(data)
+
+        name = data.get("name")
+        if not name:
+            frappe.throw("Item name is required")
+
+        item = frappe.get_doc("Item", name)
+
+        allowed_fields = {
+            "item_name",
+            "item_group",
+            "description",
+            "is_stock_item",
+            "custom_part_no",
+            "disabled"
+        }
+
+        for field, value in data.items():
+            if field in allowed_fields:
+                item.set(field, value)
+
+        item.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {
+            "status": "success",
+            "message": f"Item {name} updated successfully",
+            "data": item.as_dict()
+        }
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Update Item API Error")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+
+
+@frappe.whitelist(methods=["DELETE"])
+def delete_item(data=None):
+    """
+    Delete or Disable Item safely
+    """
+    try:
+        if not data:
+            data = frappe.form_dict
+
+        if isinstance(data, str):
+            data = frappe.parse_json(data)
+
+        name = data.get("name")
+        if not name:
+            frappe.throw(_("Item name is required"))
+
+        item = frappe.get_doc("Item", name)
+
+        # Check if item is used in transactions
+        linked = (
+            frappe.db.exists("Sales Invoice Item", {"item_code": item.item_code}) or
+            frappe.db.exists("Delivery Note Item", {"item_code": item.item_code}) or
+            frappe.db.exists("Purchase Invoice Item", {"item_code": item.item_code})
+        )
+
+        if linked:
+            # Soft delete → disable instead
+            item.disabled = 1
+            item.save(ignore_permissions=True)
+
+            return {
+                "status": "success",
+                "message": f"Item {name} is linked to transactions and has been disabled instead"
+            }
+
+        # Hard delete
+        item.delete(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {
+            "status": "success",
+            "message": f"Item {name} deleted successfully"
+        }
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Delete Item API Error")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
