@@ -325,7 +325,8 @@ fixtures = [
         "filters": [
             ["dt", "in", ["Quotation",
                           "Vehicle",
-                          "User"]]
+                          "User",
+                          "item"]]
         ]
     },
 
