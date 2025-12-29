@@ -133,51 +133,79 @@ def delete_customer(customer_id, force=False):
 
 
 #....................List all Customers...................
-@frappe.whitelist(allow_guest=False)
+
+
+from frappe.utils import cint
+
+@frappe.whitelist()
 def list_customers(
     page=1,
-    page_size=10,
+    page_size=20,
     search=None,
-    sort_by="customer_name",
-    sort_order="asc",
-    is_pagination=False,
-    **kwargs
+    order_by="customer_name asc",
+    **filters
 ):
     """
-    Fetch paginated Customer list with filters, search, sorting, and optional pagination.
+    ERPNext default-style Customer list API
     """
 
-    is_pagination = frappe.utils.sbool(is_pagination)  # convert "true"/"false" to bool
-    extra_params = {"search": search} if search else {}
+    page = cint(page)
+    page_size = cint(page_size)
+    start = (page - 1) * page_size
 
-    # Remove frappe default param
-    kwargs.pop("cmd", None)
+    # Remove internal param
+    filters.pop("cmd", None)
 
-    # 🔹 Collect filters from query params
-    filters = {}
-    for key, val in kwargs.items():
-        if val not in [None, ""]:
-            filters[key] = val
+    # -----------------------------
+    # ERPNext default OR search
+    # -----------------------------
+    or_filters = []
+    if search:
+        or_filters = [
+            ["Customer", "customer_name", "like", f"%{search}%"],
+            ["Customer", "mobile_no", "like", f"%{search}%"],
+            ["Customer", "email_id", "like", f"%{search}%"],
+        ]
 
-    print("Customer Filters =>", filters)
-
-    # ✅ Safe base_url handling
-    try:
-        base_url = frappe.request.host_url.rstrip("/") + frappe.request.path
-    except Exception:
-        base_url = ""   # fallback when frappe.request doesn't exist
-
-    return get_paginated_data(
-        doctype="Customer",
-        fields=["name", "customer_name", "mobile_no", "email_id", "disabled"],
+    # -----------------------------
+    # Fetch paginated data
+    # -----------------------------
+    customers = frappe.get_list(
+        "Customer",
+        fields=[
+            "name",
+            "customer_name",
+            "mobile_no",
+            "email_id",
+            "disabled"
+        ],
         filters=filters,
-        search=search,
-        sort_by=sort_by,
-        sort_order=sort_order,
-        page=int(page),
-        page_size=int(page_size),
-        search_fields=["customer_name", "mobile_no", "email_id"],
-        is_pagination=is_pagination,
-        base_url=base_url,
-        extra_params=extra_params
+        or_filters=or_filters,
+        order_by=order_by,
+        limit_start=start,
+        limit_page_length=page_size,
+        ignore_permissions=False   # ✅ ERP behavior
     )
+
+    # -----------------------------
+    # ERPNext way to get total count
+    # -----------------------------
+    total_count = len(
+        frappe.get_all(
+            "Customer",
+            filters=filters,
+            or_filters=or_filters,
+            limit_page_length=0,
+            ignore_permissions=False
+        )
+    )
+
+    return {
+        "data": customers,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total_records": total_count,
+            "total_pages": (total_count + page_size - 1) // page_size
+        }
+    }
