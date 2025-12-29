@@ -365,3 +365,123 @@ def list_vehicle_by_customer(customer):
     except Exception as e:
         frappe.local.response.http_status_code = 500
         return {"status": "error", "message": str(e)}
+
+
+
+
+
+
+
+
+import frappe
+import json
+from frappe import _
+
+@frappe.whitelist(allow_guest=False)
+def list_vehicles(
+    filters=None,
+    customer=None,
+    limit_start=0,
+    limit_page_length=10,
+    only_license_plates=0
+):
+    """
+    Fetch vehicles with optional pagination or only license plates by customer.
+
+    Examples:
+    1) Full vehicle list:
+       /api/method/car_repair_service.api.vehicle_api.list_vehicle
+
+    2) Vehicles by customer:
+       /api/method/car_repair_service.api.vehicle_api.list_vehicle?customer=Customer%20A
+
+    3) Only license plates:
+       /api/method/car_repair_service.api.vehicle_api.list_vehicle?customer=Customer%20A&only_license_plates=1
+    """
+    try:
+        # Convert flags
+        only_license_plates = frappe.utils.sbool(only_license_plates)
+        limit_start = int(limit_start)
+        limit_page_length = int(limit_page_length)
+
+        # Parse filters
+        if filters:
+            if isinstance(filters, str):
+                filters = json.loads(filters)
+        else:
+            filters = {}
+
+        # Customer filter
+        if customer:
+            filters["custom_customer_name"] = customer
+
+        # ---------------------------
+        # ONLY LICENSE PLATES MODE
+        # ---------------------------
+        if only_license_plates:
+            if not customer:
+                frappe.throw(_("Customer is required for license plate list"))
+
+            vehicles = frappe.get_all(
+                "Vehicle",
+                filters=filters,
+                fields=["license_plate"],
+                order_by="modified desc"
+            )
+
+            license_plates = [v["license_plate"] for v in vehicles]
+
+            return {
+                "status": "success",
+                "message": _("License plates fetched successfully"),
+                "customer": customer,
+                "total": len(license_plates),
+                "license_plates": license_plates
+            }
+
+        # ---------------------------
+        # FULL VEHICLE LIST MODE
+        # ---------------------------
+        total_count = frappe.db.count("Vehicle", filters)
+
+        vehicles = frappe.get_all(
+            "Vehicle",
+            filters=filters,
+            fields=[
+                "name",
+                "license_plate",
+                "make",
+                "model",
+                "chassis_no",
+                "car_manufacturing_year",
+                "modified",
+                "custom_customer_name"
+            ],
+            order_by="modified desc",
+            limit_start=limit_start,
+            limit_page_length=limit_page_length,
+        )
+
+        # Convert make/model to readable names
+        for v in vehicles:
+            if v.get("make"):
+                v["make"] = frappe.db.get_value("Vehicle Make", v["make"], "make")
+            if v.get("model"):
+                v["model"] = frappe.db.get_value("Vehicle Model", v["model"], "model")
+
+        return {
+            "status": "success",
+            "message": _("Vehicles fetched successfully"),
+            "total": total_count,
+            "page_size": limit_page_length,
+            "page_start": limit_start,
+            "data": vehicles
+        }
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "list_vehicle API Error")
+        frappe.local.response.http_status_code = 500
+        return {
+            "status": "error",
+            "message": str(e)
+        }
