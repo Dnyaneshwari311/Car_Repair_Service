@@ -26,7 +26,8 @@ def create_book_appointment(data):
 
         appointment_date = data.get("appointment_date")
         appointment_time = data.get("appointment_time")
-
+        description = data.get("description") 
+        
         # Pickup logic fields
         vehicle_pickup_required = data.get("vehicle_pickup_required")
         pickup_address = data.get("pickup_address")
