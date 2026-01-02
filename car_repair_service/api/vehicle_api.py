@@ -72,7 +72,7 @@ def create_vehicle(data=None):
         vehicle_info = vehicle.as_dict()
         vehicle_info["make"] = make_doc.make      # Human readable
         vehicle_info["model"] = model_doc.model    # Human readable
-
+        frappe.clear_messages()
         return {
             "status": "success",
             "status_code":201,
@@ -174,7 +174,7 @@ def update_vehicle(license_plate, data=None):
             vehicle_info["make"] = frappe.db.get_value("Vehicle Make", vehicle.make, "make")
         if vehicle.model:
             vehicle_info["model"] = frappe.db.get_value("Vehicle Model", vehicle.model, "model")
-
+        frappe.clear_messages()
         return {
             "status": "success",
             "message": _("Vehicle updated successfully"),

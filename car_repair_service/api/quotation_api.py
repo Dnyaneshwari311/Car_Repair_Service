@@ -96,7 +96,7 @@ def update_quotation(quotation_name, data):
         qtn.calculate_taxes_and_totals()
         qtn.save(ignore_permissions=True)
         frappe.db.commit()
-
+        frappe.clear_messages()
         return {"status": "success", 
                 "status_code":201,
                 "message": f"{len(new_items)} item(s) added to {quotation_name}", "quotation_name": qtn.name}

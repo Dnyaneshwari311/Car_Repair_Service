@@ -245,7 +245,8 @@ def update_car_diagnosis(name=None, data=None):
         # ✅ Save document
         doc.save(ignore_permissions=True)
         frappe.db.commit()
-
+        
+        frappe.clear_messages()
         return {
             "status": "success",
             "status_code": 200,

@@ -85,19 +85,19 @@ def create_book_appointment(data):
                 "territory": "All Territories"
             }).insert(ignore_permissions=True)
 
-        make_name = frappe.db.exists("Vehicle Make", {"make": make})
+        make_name = frappe.db.exists("Vehicle Make",make)
         if not make_name:
             make_name = frappe.get_doc({
                 "doctype": "Vehicle Make",
                 "make": make
             }).insert(ignore_permissions=True).name
 
-        model_name = frappe.db.exists("Vehicle Model", {"model": model})
+        model_name = frappe.db.exists("Vehicle Model",model)
         if not model_name:
             model_name = frappe.get_doc({
                 "doctype": "Vehicle Model",
                 "model": model,
-                "make": make_name
+                # "make": make_name
             }).insert(ignore_permissions=True).name
 
         if not frappe.db.exists("Vehicle", {"license_plate": license_plate}):
@@ -141,8 +141,8 @@ def create_book_appointment(data):
             "email": email,
             "phone": phone,
             "license_plate": license_plate,
-            "make": make,
-            "model": model,
+            "make": make_name,
+            "model": model_name,
             "service_type": data.get("service_type"),
             "appointment_date": appointment_date,
             "appointment_time": appointment_time,
@@ -411,8 +411,10 @@ def get_book_appointment(appointment_id):
             "creation": doc.creation,
             "modified": doc.modified
         }
-
-        return {"status": "success", "data": data}
+        frappe.clear_messages()
+        return {"status": "success", 
+                "status_code":200,
+                "data": data}
 
     except Exception as e:
         frappe.log_error(message=str(e), title="Get Appointment Error")

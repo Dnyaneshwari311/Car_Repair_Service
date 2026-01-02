@@ -76,9 +76,10 @@ def create_employee(data=None):
 
         employee.insert(ignore_permissions=True)
         frappe.db.commit()
-
+        frappe.clear_messages()
         return {
             "status": "success",
+            "status_code":200,
             "employee": employee.name
         }
 

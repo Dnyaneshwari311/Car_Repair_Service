@@ -760,6 +760,82 @@ def get_car_repair_request(
 
 
 
+
+@frappe.whitelist(allow_guest=False)
+def get_car_repair_request_by_id(name):
+    try:
+        if not name:
+            return {
+                "status": "error",
+                "message": "Car Repair Request ID is required"
+            }
+
+        if not frappe.db.exists("Car Repair Request", name):
+            return {
+                "status": "error",
+                "message": f"Car Repair Request '{name}' not found"
+            }
+
+        IMAGE_TYPE_KEY_MAP = {
+            "Front View": "front_view",
+            "Back View": "back_view",
+            "Left View": "left_view",
+            "Right View": "right_view"
+        }
+
+        def empty_image_structure():
+            return {
+                "front_view": [],
+                "back_view": [],
+                "left_view": [],
+                "right_view": []
+            }
+
+        doc = frappe.get_doc("Car Repair Request", name)
+        data = doc.as_dict()
+
+        # vehicle concerns
+        data["vehicle_concern"] = [
+            {"vehicle_concern": vc.vehicle_concern}
+            for vc in doc.get("vehicle_concern", [])
+        ]
+
+        # grouped images
+        grouped_images = empty_image_structure()
+        for img in doc.get("car_repair_images", []):
+            key = IMAGE_TYPE_KEY_MAP.get(img.image_type)
+            if key:
+                grouped_images[key].append(
+                    frappe.utils.get_url(img.image)
+                )
+
+        data["car_repair_images"] = grouped_images
+
+        if data.get("odometer_photo"):
+            data["odometer_photo"] = frappe.utils.get_url(
+                data["odometer_photo"]
+            )
+
+        return {
+            "status": "success",
+            "status_code":200,
+            "data": data
+        }
+
+    except Exception:
+        frappe.log_error(
+            title="Get Car Repair Request By ID Error",
+            message=frappe.get_traceback()
+        )
+        return {
+            "status": "error",
+            "message": "Internal Server Error"
+        }
+
+
+
+
+
 # ====================================================
 # UPDATE Car Repair Request
 # ====================================================
