@@ -85,19 +85,19 @@ def create_book_appointment(data):
                 "territory": "All Territories"
             }).insert(ignore_permissions=True)
 
-        make_name = frappe.db.exists("Vehicle Make",make)
+        make_name = frappe.db.exists("Vehicle Make", {"make": make})
         if not make_name:
             make_name = frappe.get_doc({
                 "doctype": "Vehicle Make",
                 "make": make
             }).insert(ignore_permissions=True).name
 
-        model_name = frappe.db.exists("Vehicle Model",model)
+        model_name = frappe.db.exists("Vehicle Model", {"model": model})
         if not model_name:
             model_name = frappe.get_doc({
                 "doctype": "Vehicle Model",
                 "model": model,
-                # "make": make_name
+                "make": make_name
             }).insert(ignore_permissions=True).name
 
         if not frappe.db.exists("Vehicle", {"license_plate": license_plate}):
