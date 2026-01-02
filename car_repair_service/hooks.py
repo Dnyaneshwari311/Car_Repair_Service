@@ -360,7 +360,8 @@ fixtures = [
                 "Fetch Odometer value",
                 "Vehicle Pick Up Required Same Like Bokk Appointement",
                 "Date and Time Validation On Car Diagnosis",
-                "Date And Time Validation For Book Appontement"
+                "Date And Time Validation For Book Appontement",
+                "Job Card Creaion Hide Customer Signature and images"
                 
                 
             ]]
