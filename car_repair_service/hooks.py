@@ -358,7 +358,9 @@ fixtures = [
                 "Filter Item In Car Repair According to Model",
                 "Update Esimated Cost On Car Diagnosis According To Quantity",
                 "Fetch Odometer value",
-                "Vehicle Pick Up Required Same Like Bokk Appointement"
+                "Vehicle Pick Up Required Same Like Bokk Appointement",
+                "Date and Time Validation On Car Diagnosis",
+                "Date And Time Validation For Book Appontement"
                 
                 
             ]]

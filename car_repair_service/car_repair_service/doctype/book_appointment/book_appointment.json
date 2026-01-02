@@ -48,13 +48,15 @@
   },
   {
    "fieldname": "make",
-   "fieldtype": "Data",
-   "label": "Make"
+   "fieldtype": "Link",
+   "label": "Make",
+   "options": "Vehicle Make"
   },
   {
    "fieldname": "model",
-   "fieldtype": "Data",
-   "label": "Model"
+   "fieldtype": "Link",
+   "label": "Model",
+   "options": "Vehicle Model"
   },
   {
    "fieldname": "service_type",
@@ -133,7 +135,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-29 17:47:56.669273",
+ "modified": "2026-01-02 11:56:47.696238",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Book Appointment",

@@ -55,14 +55,53 @@ def create_car_repair_request(appointment_name):
         # Create Car Repair Request Document
         # -------------------------------
         repair = frappe.new_doc("Car Repair Request")
+        # repair.update({
+        #     "customer_name": customer,
+        #     "email": appointment.email,
+        #     "phone": appointment.phone,
+        #     "car": appointment.license_plate,  # <-- Display license_plate directly
+        #     "license_plate": appointment.license_plate,
+        #     "make": appointment.make,
+        #     "model": appointment.model,
+        #     "service_type": appointment.service_type,
+        #     "reason_for_repair": appointment.reason_for_repair,
+        #     "appointment": appointment.name,
+        #     "status": "Open",
+        #     "odometer_photo": odometer_photo,
+        #     "customer_signature": appointment.get("customer_signature") or None,
+        #     "vehicle_pickup_required": appointment.vehicle_pickup_required,
+        #     "pickup_address": appointment.pickup_address,
+        #     "same_as_pick_up_address": appointment.same_as_pick_up_address or 0,
+        #     "drop_address": appointment.drop_address,
+        #     "assigned_to": appointment.assigned_to
+            
+        # })
+        
+        # -------------------------------
+        # Fetch Make and Model Names
+        # -------------------------------
+        make_name = ""
+        model_name = ""
+
+        if appointment.make:
+            make_doc = frappe.get_doc("Vehicle Make", appointment.make)
+            make_name = make_doc.make   # replace 'make_name' with the actual field if different
+
+        if appointment.model:
+            model_doc = frappe.get_doc("Vehicle Model", appointment.model)
+            model_name = model_doc.model # replace 'model_name' with actual field
+
+        # -------------------------------
+        # Update Repair Doc
+        # -------------------------------
         repair.update({
             "customer_name": customer,
             "email": appointment.email,
             "phone": appointment.phone,
-            "car": appointment.license_plate,  # <-- Display license_plate directly
+            "car": appointment.license_plate,
             "license_plate": appointment.license_plate,
-            "make": appointment.make,
-            "model": appointment.model,
+            "make": make_name,   # <-- now name is displayed
+            "model": model_name, # <-- now name is displayed
             "service_type": appointment.service_type,
             "reason_for_repair": appointment.reason_for_repair,
             "appointment": appointment.name,
@@ -75,6 +114,9 @@ def create_car_repair_request(appointment_name):
             "drop_address": appointment.drop_address,
             "assigned_to": appointment.assigned_to
         })
+
+        
+        
 
         # -------------------------------
         # Child Table: Car Repair Images (optional)

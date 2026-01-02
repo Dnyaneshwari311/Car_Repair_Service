@@ -83,7 +83,6 @@
    "options": "Vehicle"
   },
   {
-   "fetch_from": "car.car_manufacturing_year",
    "fieldname": "car_manufacturing_year",
    "fieldtype": "Int",
    "label": "Car Manufacturing Year"
@@ -266,7 +265,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2025-12-15 17:46:08.541734",
+ "modified": "2026-01-02 11:05:25.190689",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",

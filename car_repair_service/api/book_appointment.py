@@ -588,3 +588,9 @@ def cancel_book_appointment(appointment_name):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Cancel Book Appointment Error")
         frappe.throw(str(e))
+
+
+
+
+
+
