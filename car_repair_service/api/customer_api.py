@@ -5,8 +5,8 @@ from car_repair_service.api.utils import get_paginated_data
 #................Create Customer...............
 @frappe.whitelist(allow_guest=False)
 def create_customer(customer_name, mobile_no=None, email_id=None):
-    from car_repair_service.api.utils import ensure_authenticated     
-    ensure_authenticated()
+    
+    
     doc = frappe.new_doc("Customer")
     doc.customer_name = customer_name
     doc.mobile_no = mobile_no

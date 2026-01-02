@@ -77,6 +77,7 @@ def create_vehicle(data=None):
             "status": "success",
             "status_code":201,
             "message": f"Vehicle {action} successfully",
+            "vehicle":vehicle.name
            
         }
 

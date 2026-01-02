@@ -50,6 +50,7 @@ def create_sales_invoice_from_car_repair(car_repair_name):
 
         return {
             "status": "success",
+            "status_code": 200,
             "message": "Sales Invoice created",
             "sales_invoice": si.name
         }

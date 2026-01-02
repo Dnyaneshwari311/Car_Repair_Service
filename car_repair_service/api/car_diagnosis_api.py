@@ -33,6 +33,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
             order_by="creation desc",
             limit_page_length=1
         )
+        frappe.clear_messages()
 
         if not last_request:
             return {"status": "not_found", "message": "No Car Repair Request found"}
@@ -70,6 +71,8 @@ def create_car_diagnosis(customer_name=None, customer=None):
         frappe.db.commit()
 
         # return {"status": "success", "name": diagnosis.name}
+        frappe.clear_messages()
+
         return {
             "status": "success",
             "status_code": 200,
