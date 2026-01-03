@@ -71,6 +71,74 @@ def create_sales_invoice_from_car_repair(car_repair_name):
 
 
 
+# @frappe.whitelist(methods=["GET"])
+# def list_sales_invoices(
+#     page=1,
+#     limit=20,
+#     search=None,
+#     customer=None
+# ):
+#     page = int(page)
+#     limit = int(limit)
+#     start = (page - 1) * limit
+
+#     filters = {}
+#     if customer:
+#         filters["customer"] = customer
+
+#     or_filters = []
+#     if search:
+#         or_filters = [
+#             ["Sales Invoice", "name", "like", f"%{search}%"],
+#             ["Sales Invoice", "customer_name", "like", f"%{search}%"]
+#         ]
+
+#     # -----------------------------
+#     # TOTAL COUNT (NO or_filters)
+#     # -----------------------------
+#     total_records = frappe.get_all(
+#         "Sales Invoice",
+#         filters=filters,
+#         or_filters=or_filters if or_filters else None,
+#         pluck="name"
+#     )
+
+#     total = len(total_records)
+
+#     # -----------------------------
+#     # PAGINATED DATA
+#     # -----------------------------
+#     data = frappe.get_all(
+#         "Sales Invoice",
+#         filters=filters,
+#         or_filters=or_filters if or_filters else None,
+#         fields=[
+#             "name",
+#             "customer",
+#             "customer_name",
+#             "posting_date",
+#             "due_date",
+#             "status",
+#             "grand_total",
+#             "outstanding_amount",
+#             "docstatus"
+#         ],
+#         start=start,
+#         page_length=limit,
+#         order_by="modified desc"
+#     )
+
+#     return {
+#         "status": "success",
+#         "page": page,
+#         "limit": limit,
+#         "total": total,
+#         "data": data
+#     }
+
+
+
+
 @frappe.whitelist(methods=["GET"])
 def list_sales_invoices(
     page=1,
@@ -94,21 +162,17 @@ def list_sales_invoices(
         ]
 
     # -----------------------------
-    # TOTAL COUNT (NO or_filters)
+    # TOTAL COUNT
     # -----------------------------
-    total_records = frappe.get_all(
+    total = frappe.db.count(
         "Sales Invoice",
-        filters=filters,
-        or_filters=or_filters if or_filters else None,
-        pluck="name"
+        filters=filters
     )
 
-    total = len(total_records)
-
     # -----------------------------
-    # PAGINATED DATA
+    # FETCH SALES INVOICES
     # -----------------------------
-    data = frappe.get_all(
+    invoices = frappe.get_all(
         "Sales Invoice",
         filters=filters,
         or_filters=or_filters if or_filters else None,
@@ -128,14 +192,29 @@ def list_sales_invoices(
         order_by="modified desc"
     )
 
+    # -----------------------------
+    # FETCH ITEMS FOR EACH INVOICE
+    # -----------------------------
+    for inv in invoices:
+        inv["items"] = frappe.get_all(
+            "Sales Invoice Item",
+            filters={"parent": inv["name"]},
+            fields=[
+                "item_code",
+                "item_name",
+                "qty",
+                "rate",
+                "amount"
+            ]
+        )
+
     return {
         "status": "success",
         "page": page,
         "limit": limit,
         "total": total,
-        "data": data
+        "data": invoices
     }
-
 
 
 
