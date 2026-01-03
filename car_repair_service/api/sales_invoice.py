@@ -224,6 +224,8 @@ def update_sales_invoice(name, data=None):
 
 
 
+
+
 @frappe.whitelist(methods=["DELETE"])
 def delete_sales_invoice(name):
     try:
@@ -256,6 +258,75 @@ def delete_sales_invoice(name):
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Delete Sales Invoice Error")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+@frappe.whitelist(methods=["GET"])
+def get_sales_invoice(name):
+    try:
+        if not name:
+            frappe.throw(_("Sales Invoice name is required"))
+
+        si = frappe.get_doc("Sales Invoice", name)
+
+        return {
+            "status": "success",
+            "data": {
+                "name": si.name,
+                "customer": si.customer,
+                "customer_name": si.customer_name,
+                "company": si.company,
+                "posting_date": si.posting_date,
+                "due_date": si.due_date,
+                "status": si.status,
+                "remarks": si.remarks,
+                "docstatus": si.docstatus,
+                "currency": si.currency,
+                "grand_total": si.grand_total,
+                "outstanding_amount": si.outstanding_amount,
+                "items": [
+                    {
+                        "item_code": d.item_code,
+                        "item_name": d.item_name,
+                        "qty": d.qty,
+                        "rate": d.rate,
+                        "amount": d.amount
+                    }
+                    for d in si.items
+                ],
+                "taxes": [
+                    {
+                        "charge_type": t.charge_type,
+                        "account_head": t.account_head,
+                        "rate": t.rate,
+                        "tax_amount": t.tax_amount
+                    }
+                    for t in si.taxes
+                ]
+            }
+        }
+
+    except frappe.DoesNotExistError:
+        return {
+            "status": "error",
+            "message": "Sales Invoice not found"
+        }
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Get Sales Invoice Error")
         return {
             "status": "error",
             "message": str(e)

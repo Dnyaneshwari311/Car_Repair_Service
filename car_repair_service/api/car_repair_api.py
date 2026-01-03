@@ -263,3 +263,76 @@ def list_car_repair():
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Car Repair List API Error")
         return {"status": "error", "message": str(e)}
+
+
+
+
+
+
+
+@frappe.whitelist(allow_guest=False)
+def get_car_repair_by_id(name):
+    try:
+        if not name:
+            return {
+                "status": "error",
+                "message": "Missing 'name' parameter"
+            }
+
+        # Check existence
+        if not frappe.db.exists("Car repair", name):
+            return {
+                "status": "error",
+                "message": f"Car Repair '{name}' not found"
+            }
+
+        doc = frappe.get_doc("Car repair", name)
+
+        # Parent data
+        data = {
+            "name": doc.name,
+            "customer_name": doc.customer_name,
+            "phone": doc.phone,
+            "email": doc.email,
+            "status": doc.status,
+            # "reference_number": doc.reference_number,
+            "car_diagnosis": doc.car_diagnosis,
+            "quotation": doc.quotation,
+            "estimated_delivery_date": doc.estimated_delivery_date,
+            "estimated_delivery_time": doc.estimated_delivery_time,
+            "car": doc.car,
+            "license_plate": doc.license_plate,
+            "model": doc.model,
+            "car_manufacturing_year": doc.car_manufacturing_year,
+            "vehicle_pick_up": doc.vehicle_pick_up,
+            "customer_signature": doc.customer_signature,
+            "remark": doc.remark,
+            "creation": doc.creation,
+            "modified": doc.modified
+        }
+
+        # Child table
+        data["list_of_damage"] = []
+        for row in doc.list_of_damage:
+            data["list_of_damage"].append({
+                "name": row.name,
+                "damage_description": row.damage_description,
+                "part_required": row.part_required,
+                "status": row.status,
+                "quantity": row.quantity,
+                "estimated_cost": row.estimated_cost,
+                "assigned_to": row.assigned_to
+            })
+
+        return {
+            "status": "success",
+            "message": "Car Repair Details",
+            "data": data
+        }
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Car Repair Get By ID API Error")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
