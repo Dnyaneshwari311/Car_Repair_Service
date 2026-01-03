@@ -177,67 +177,176 @@ def update_car_repair():
 
 
 
+# @frappe.whitelist(allow_guest=False)
+# def list_car_repair():
+#     try:
+#         page = int(frappe.form_dict.get("page", 1))
+#         limit = int(frappe.form_dict.get("limit", 20))
+#         status = frappe.form_dict.get("status")
+#         customer_name = frappe.form_dict.get("customer_name")
+#         reference_number = frappe.form_dict.get("reference_number")
+#         search = frappe.form_dict.get("search")
+#         sort_by = frappe.form_dict.get("sort_by", "creation")
+#         sort_order = frappe.form_dict.get("sort_order", "desc")
+
+#         start = (page - 1) * limit
+
+#         filters = {}
+
+#         if status:
+#             filters["status"] = status
+
+#         if customer_name:
+#             filters["customer_name"] = ["like", f"%{customer_name}%"]
+
+#         if reference_number:
+#             filters["reference_number"] = ["like", f"%{reference_number}%"]
+
+#         # Apply search to multiple fields
+#         search_filters = []
+#         if search:
+#             search_filters = [
+#                 ["Car repair", "customer_name", "like", f"%{search}%"],
+#                 ["Car repair", "phone", "like", f"%{search}%"],
+#                 ["Car repair", "email", "like", f"%{search}%"],
+#                 ["Car repair", "car", "like", f"%{search}%"],
+#                 ["Car repair", "reference_number", "like", f"%{search}%"]
+#             ]
+
+#         # -------------------------
+#         # Query documents
+#         # -------------------------
+#         car_repairs = frappe.db.get_list(
+#             "Car repair",
+#             filters=filters,
+#             fields=[
+#                 "name", "customer_name", "phone", "email", "status",
+#                 "reference_number", "car", "license_plate",
+#                 "model", "estimated_delivery_date", "estimated_delivery_time",
+#                 "creation"
+#             ],
+#             or_filters=search_filters,
+#             order_by=f"{sort_by} {sort_order}",
+#             start=start,
+#             page_length=limit
+#         )
+
+#         # -------------------------
+#         # Fetch child table rows
+#         # -------------------------
+#         for item in car_repairs:
+#             item["list_of_damage"] = frappe.get_all(
+#                 "Car Repair Damage",
+#                 filters={"parent": item["name"]},
+#                 fields=[
+#                     "name",
+#                     "damage_description",
+#                     "part_required",
+#                     "status",
+#                     "quantity",
+#                     "estimated_cost",
+#                     "assigned_to"
+#                 ]
+#             )
+
+#         total_count = frappe.db.count("Car repair", filters)
+
+#         return {
+#             "status": "success",
+#             "message": "Car Repair List",
+#             "page": page,
+#             "limit": limit,
+#             "total": total_count,
+#             "data": car_repairs
+#         }
+
+#     except Exception as e:
+#         frappe.log_error(frappe.get_traceback(), "Car Repair List API Error")
+#         return {"status": "error", "message": str(e)}
+
+
+
+
+
+
+
 @frappe.whitelist(allow_guest=False)
-def list_car_repair():
+def list_car_repairs(page=1, page_size=20, status=None, search=None, sort_by="creation", sort_order="desc"):
     try:
-        page = int(frappe.form_dict.get("page", 1))
-        limit = int(frappe.form_dict.get("limit", 20))
-        status = frappe.form_dict.get("status")
-        customer_name = frappe.form_dict.get("customer_name")
-        reference_number = frappe.form_dict.get("reference_number")
-        search = frappe.form_dict.get("search")
-        sort_by = frappe.form_dict.get("sort_by", "creation")
-        sort_order = frappe.form_dict.get("sort_order", "desc")
+        page = int(page)
+        page_size = int(page_size)
 
-        start = (page - 1) * limit
+        # -------------------------
+        # VALIDATE SORT
+        # -------------------------
+        allowed_sort_fields = [
+            "creation", "modified", "customer_name", "status"
+        ]
+        if sort_by not in allowed_sort_fields:
+            sort_by = "creation"
 
-        filters = {}
+        sort_order = "DESC" if sort_order.lower() == "desc" else "ASC"
+        start = (page - 1) * page_size
+
+        # -------------------------
+        # WHERE CONDITIONS
+        # -------------------------
+        conditions = []
+        values = {}
 
         if status:
-            filters["status"] = status
+            conditions.append("status = %(status)s")
+            values["status"] = status
 
-        if customer_name:
-            filters["customer_name"] = ["like", f"%{customer_name}%"]
-
-        if reference_number:
-            filters["reference_number"] = ["like", f"%{reference_number}%"]
-
-        # Apply search to multiple fields
-        search_filters = []
         if search:
-            search_filters = [
-                ["Car repair", "customer_name", "like", f"%{search}%"],
-                ["Car repair", "phone", "like", f"%{search}%"],
-                ["Car repair", "email", "like", f"%{search}%"],
-                ["Car repair", "car", "like", f"%{search}%"],
-                ["Car repair", "reference_number", "like", f"%{search}%"]
-            ]
+            conditions.append("""
+                (
+                    name LIKE %(search)s OR
+                    customer_name LIKE %(search)s OR
+                    phone LIKE %(search)s OR
+                    email LIKE %(search)s OR
+                    car LIKE %(search)s
+                )
+            """)
+            values["search"] = f"%{search}%"
+
+        where_clause = " AND ".join(conditions)
+        if where_clause:
+            where_clause = "WHERE " + where_clause
 
         # -------------------------
-        # Query documents
+        # DATA QUERY
         # -------------------------
-        car_repairs = frappe.db.get_list(
-            "Car repair",
-            filters=filters,
-            fields=[
-                "name", "customer_name", "phone", "email", "status",
-                "reference_number", "car", "license_plate",
-                "model", "estimated_delivery_date", "estimated_delivery_time",
-                "creation"
-            ],
-            or_filters=search_filters,
-            order_by=f"{sort_by} {sort_order}",
-            start=start,
-            page_length=limit
-        )
+        data = frappe.db.sql(f"""
+            SELECT
+                name,
+                customer_name,
+                phone,
+                email,
+                status,
+                car,
+                license_plate,
+                model,
+                estimated_delivery_date,
+                estimated_delivery_time,
+                creation
+            FROM `tabCar repair`
+            {where_clause}
+            ORDER BY {sort_by} {sort_order}
+            LIMIT %(start)s, %(page_size)s
+        """, {
+            **values,
+            "start": start,
+            "page_size": page_size
+        }, as_dict=True)
 
         # -------------------------
-        # Fetch child table rows
+        # CHILD TABLE
         # -------------------------
-        for item in car_repairs:
-            item["list_of_damage"] = frappe.get_all(
+        for row in data:
+            row["list_of_damage"] = frappe.get_all(
                 "Car Repair Damage",
-                filters={"parent": item["name"]},
+                filters={"parent": row["name"]},
                 fields=[
                     "name",
                     "damage_description",
@@ -249,25 +358,35 @@ def list_car_repair():
                 ]
             )
 
-        total_count = frappe.db.count("Car repair", filters)
+        # -------------------------
+        # COUNT QUERY
+        # -------------------------
+        total_records = frappe.db.sql(f"""
+            SELECT COUNT(*)
+            FROM `tabCar repair`
+            {where_clause}
+        """, values)[0][0]
+
+        total_pages = (total_records + page_size - 1) // page_size
 
         return {
             "status": "success",
-            "message": "Car Repair List",
-            "page": page,
-            "limit": limit,
-            "total": total_count,
-            "data": car_repairs
+            "filters": {
+                "status": status or "All",
+                "search": search or ""
+            },
+            "pagination": {
+                "current_page": page,
+                "page_size": page_size,
+                "total_records": total_records,
+                "total_pages": total_pages
+            },
+            "data": data
         }
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Car Repair List API Error")
         return {"status": "error", "message": str(e)}
-
-
-
-
-
 
 
 @frappe.whitelist(allow_guest=False)
