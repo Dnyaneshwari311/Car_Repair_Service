@@ -317,54 +317,154 @@ def create_car_repair_request(appointment_name, status=None):
 
 
 
+# @frappe.whitelist(allow_guest=False)
+# def get_book_appointments(page=1, page_size=10, status=None):
+#     """
+#     Get a paginated list of Book Appointments
+#     with optional status-wise filtering.
+#     """
+#     try:
+#         page = int(page)
+#         page_size = int(page_size)
+
+#         # Build filters dynamically
+#         filters = {}
+#         if status:
+#             filters["status"] = status
+
+#         appointments = frappe.get_all(
+#             "Book Appointment",
+#             filters=filters,
+#             fields=[
+#                 "name",
+#                 "customer_name",
+#                 "email",
+#                 "phone",
+#                 "license_plate",
+#                 "make",
+#                 "model",
+#                 "service_type",
+#                 "appointment_date",
+#                 "appointment_time",
+#                 "vehicle_pickup_required",
+#                 "pickup_address",
+#                 "drop_address",
+#                 "status",
+#                 "description",
+#                 "creation",
+#                 "modified"
+#             ],
+#             start=(page - 1) * page_size,
+#             page_length=page_size,
+#             order_by="creation desc"
+#         )
+
+#         # Count with same filters
+#         total_records = frappe.db.count("Book Appointment", filters=filters)
+#         total_pages = (total_records + page_size - 1) // page_size
+
+#         return {
+#             "status": "success",
+#             "filters": {
+#                 "status": status or "All"
+#             },
+#             "pagination": {
+#                 "current_page": page,
+#                 "page_size": page_size,
+#                 "total_records": total_records,
+#                 "total_pages": total_pages
+#             },
+#             "data": appointments
+#         }
+
+#     except Exception as e:
+#         frappe.log_error(message=str(e), title="Fetch Appointments Error")
+#         return {"status": "error", "message": str(e)}
+
+
+
+
+
+
 @frappe.whitelist(allow_guest=False)
-def get_book_appointments(page=1, page_size=10, status=None):
-    """
-    Get a paginated list of Book Appointments
-    with optional status-wise filtering.
-    """
+def get_book_appointments(page=1, page_size=10, status=None, search=None):
     try:
         page = int(page)
         page_size = int(page_size)
 
-        # Build filters dynamically
-        filters = {}
+        # -------------------------
+        # BASE CONDITIONS
+        # -------------------------
+        conditions = []
+        values = {}
+
         if status:
-            filters["status"] = status
+            conditions.append("status = %(status)s")
+            values["status"] = status
 
-        appointments = frappe.get_all(
-            "Book Appointment",
-            filters=filters,
-            fields=[
-                "name",
-                "customer_name",
-                "email",
-                "phone",
-                "license_plate",
-                "make",
-                "model",
-                "service_type",
-                "appointment_date",
-                "appointment_time",
-                "vehicle_pickup_required",
-                "pickup_address",
-                "status",
-                "creation",
-                "modified"
-            ],
-            start=(page - 1) * page_size,
-            page_length=page_size,
-            order_by="creation desc"
-        )
+        if search:
+            conditions.append("""
+                (
+                    name LIKE %(search)s OR
+                    customer_name LIKE %(search)s OR
+                    phone LIKE %(search)s OR
+                    license_plate LIKE %(search)s
+                )
+            """)
+            values["search"] = f"%{search}%"
 
-        # Count with same filters
-        total_records = frappe.db.count("Book Appointment", filters=filters)
+        where_clause = " AND ".join(conditions)
+        if where_clause:
+            where_clause = "WHERE " + where_clause
+
+        # -------------------------
+        # DATA QUERY
+        # -------------------------
+        data = frappe.db.sql(f"""
+            SELECT
+                name,
+                customer_name,
+                email,
+                phone,
+                license_plate,
+                make,
+                model,
+                service_type,
+                appointment_date,
+                appointment_time,
+                vehicle_pickup_required,
+                pickup_address,
+                drop_address,
+                status,
+                description,
+                creation,
+                modified
+            FROM `tabBook Appointment`
+            {where_clause}
+            ORDER BY creation DESC
+            LIMIT %(start)s, %(page_size)s
+        """, {
+            **values,
+            "start": (page - 1) * page_size,
+            "page_size": page_size
+        }, as_dict=True)
+
+        # -------------------------
+        # COUNT QUERY
+        # -------------------------
+        total_records = frappe.db.sql(f"""
+            SELECT COUNT(*)
+            FROM `tabBook Appointment`
+            {where_clause}
+        """, values)[0][0]
+
         total_pages = (total_records + page_size - 1) // page_size
 
         return {
             "status": "success",
             "filters": {
-                "status": status or "All"
+                "status": status or "All",
+                "search": search or ""
             },
             "pagination": {
                 "current_page": page,
@@ -372,14 +472,12 @@ def get_book_appointments(page=1, page_size=10, status=None):
                 "total_records": total_records,
                 "total_pages": total_pages
             },
-            "data": appointments
+            "data": data
         }
 
     except Exception as e:
         frappe.log_error(message=str(e), title="Fetch Appointments Error")
         return {"status": "error", "message": str(e)}
-
-
 
 # ----------------------------------------------------------------------------
 # ...................Get Single Book Appointement Id..........................
