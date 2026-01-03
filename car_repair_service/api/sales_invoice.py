@@ -181,6 +181,7 @@ def list_sales_invoices(
             "customer",
             "customer_name",
             "posting_date",
+            "posting_time",
             "due_date",
             "status",
             "grand_total",
