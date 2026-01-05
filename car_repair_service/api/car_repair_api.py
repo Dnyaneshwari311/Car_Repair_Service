@@ -78,21 +78,114 @@ def delete_car_repair(name):
 
 
 
+# @frappe.whitelist(allow_guest=False)
+# def update_car_repair():
+#     import json
+    
+#     name = frappe.form_dict.get("name")
+#     data = frappe.form_dict.get("data")
+
+#     if not name:
+#         return {"status": "error", "message": "Missing 'name' parameter"}
+
+#     if not data:
+#         return {"status": "error", "message": "Missing 'data' parameter"}
+
+#     if isinstance(data, str):
+#         data = json.loads(data)
+
+#     try:
+#         doc = frappe.get_doc("Car repair", name)
+
+#         # helper: check if row contains at least one valid field
+#         def is_valid_row(row):
+#             if not row or not isinstance(row, dict):
+#                 return False
+
+#             # row is {} → skip
+#             if len(row.keys()) == 0:
+#                 return False
+
+#             # check if row contains at least one non-empty value
+#             for field in ["damage_description", "part_required", "status", "quantity", "estimated_cost", "assigned_to"]:
+#                 if row.get(field) not in [None, "", 0]:
+#                     return True
+
+#             return False  # all empty → skip
+
+#         # 1. Status override
+#         if "status" in data:
+#             doc._api_status_override = True
+#             doc.status = data.get("status")
+
+#         # 2. Update simple parent fields
+#         for field, value in data.items():
+#             if field not in ["status", "list_of_damage"]:
+#                 doc.set(field, value)
+
+#         # 3. Update/Add child rows
+#         if "list_of_damage" in data:
+
+#             existing_rows = {row.name: row for row in doc.list_of_damage}
+
+#             for row in data["list_of_damage"]:
+#                 # 🔥 SUPER IMPORTANT: skip invalid/empty row
+#                 if not is_valid_row(row):
+#                     continue
+
+#                 row_name = row.get("name")
+
+#                 if row_name and row_name in existing_rows:
+#                     # update row
+#                     child = existing_rows[row_name]
+#                     child.damage_description = row.get("damage_description")
+#                     child.part_required = row.get("part_required")
+#                     child.status = row.get("status")
+#                     child.quantity = row.get("quantity")
+#                     child.estimated_cost = row.get("estimated_cost")
+#                     child.assigned_to = row.get("assigned_to")
+#                 else:
+#                     # add new row
+#                     doc.append("list_of_damage", {
+#                         "damage_description": row.get("damage_description"),
+#                         "part_required": row.get("part_required"),
+#                         "status": row.get("status"),
+#                         "quantity": row.get("quantity"),
+#                         "estimated_cost": row.get("estimated_cost"),
+#                         "assigned_to": row.get("assigned_to")
+#                     })
+
+#         doc.save(ignore_permissions=True)
+#         frappe.db.commit()
+
+#         return {
+#             "status": "success",
+#             "message": "Car Repair Updated",
+#             "data": doc.name
+#         }
+
+#     except Exception as e:
+#         frappe.log_error(frappe.get_traceback(), "Car Repair Update API Error")
+#         return {"status": "error", "message": str(e)}
+
+
+
 @frappe.whitelist(allow_guest=False)
 def update_car_repair():
     import json
     
-    name = frappe.form_dict.get("name")
     data = frappe.form_dict.get("data")
-
-    if not name:
-        return {"status": "error", "message": "Missing 'name' parameter"}
 
     if not data:
         return {"status": "error", "message": "Missing 'data' parameter"}
 
     if isinstance(data, str):
         data = json.loads(data)
+
+    # Get name from data
+    name = data.get("name")
+    if not name:
+        return {"status": "error", "message": "Missing 'name' parameter in data"}
 
     try:
         doc = frappe.get_doc("Car repair", name)
@@ -101,17 +194,12 @@ def update_car_repair():
         def is_valid_row(row):
             if not row or not isinstance(row, dict):
                 return False
-
-            # row is {} → skip
             if len(row.keys()) == 0:
                 return False
-
-            # check if row contains at least one non-empty value
             for field in ["damage_description", "part_required", "status", "quantity", "estimated_cost", "assigned_to"]:
                 if row.get(field) not in [None, "", 0]:
                     return True
-
-            return False  # all empty → skip
+            return False
 
         # 1. Status override
         if "status" in data:
@@ -120,23 +208,19 @@ def update_car_repair():
 
         # 2. Update simple parent fields
         for field, value in data.items():
-            if field not in ["status", "list_of_damage"]:
+            if field not in ["status", "list_of_damage", "name"]:  # skip name now
                 doc.set(field, value)
 
         # 3. Update/Add child rows
         if "list_of_damage" in data:
-
             existing_rows = {row.name: row for row in doc.list_of_damage}
 
             for row in data["list_of_damage"]:
-                # 🔥 SUPER IMPORTANT: skip invalid/empty row
                 if not is_valid_row(row):
                     continue
 
                 row_name = row.get("name")
-
                 if row_name and row_name in existing_rows:
-                    # update row
                     child = existing_rows[row_name]
                     child.damage_description = row.get("damage_description")
                     child.part_required = row.get("part_required")
@@ -145,7 +229,6 @@ def update_car_repair():
                     child.estimated_cost = row.get("estimated_cost")
                     child.assigned_to = row.get("assigned_to")
                 else:
-                    # add new row
                     doc.append("list_of_damage", {
                         "damage_description": row.get("damage_description"),
                         "part_required": row.get("part_required"),
@@ -167,9 +250,6 @@ def update_car_repair():
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Car Repair Update API Error")
         return {"status": "error", "message": str(e)}
-
-
-
 
 
 
