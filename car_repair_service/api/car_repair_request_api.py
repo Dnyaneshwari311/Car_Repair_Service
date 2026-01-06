@@ -89,7 +89,7 @@ def create_car_repair_request(data):
             "driver_name", "driver_mob_no",
             "odometer_value", "odometer_value_current",
             "fuel_level", "customer_signature",
-            "remark", "fuel_type","vehicle_pickup_required","pickup_address","same_as_drop_address","drop_address"
+            "remark", "fuel_type","vehicle_pickup_required","pickup_address","same_as_pick_up_address","drop_address"
         ]
 
         for f in fields:
