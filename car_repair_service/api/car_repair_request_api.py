@@ -912,14 +912,125 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
 
 
 
+# @frappe.whitelist(allow_guest=False)
+# def get_car_repair_request(
+#     page=1,
+#     page_size=10,
+#     sort_by="creation",
+#     sort_order="desc",
+#     search=None,
+#     is_pagination=True
+# ):
+#     import frappe
+#     import math
+
+#     try:
+#         IMAGE_TYPE_KEY_MAP = {
+#             "Front View": "front_view",
+#             "Back View": "back_view",
+#             "Left View": "left_view",
+#             "Right View": "right_view"
+#         }
+
+#         def empty_image_structure():
+#             return {
+#                 "front_view": [],
+#                 "back_view": [],
+#                 "left_view": [],
+#                 "right_view": []
+#             }
+
+#         # -------------------------
+#         # Fields to fetch
+#         # -------------------------
+#         fields = [
+#             "name", "customer_name", "email", "phone",
+#             "make", "model", "license_plate", "assign_adviser",
+#             "car_manufacturing_year", "odometer_photo",
+#             "priority", "service_type", "repair_request_date",
+#             "reason_for_repair", "odometer_value",
+#             "odometer_value_current", "customer_signature",
+#             "driver_name","driver_mob_no","fuel_type"
+#         ]
+
+#         search_fields = ["name", "customer_name", "make", "model", "license_plate", "service_type", "priority"]
+
+#         # -------------------------
+#         # Fetch all records
+#         # -------------------------
+#         all_data = frappe.get_all(
+#             "Car Repair Request",
+#             fields=fields,
+#             order_by=f"{sort_by} {sort_order}",
+#             as_list=False
+#         )
+
+#         # -------------------------
+#         # Apply search if provided
+#         # -------------------------
+#         if search:
+#             search_lower = search.lower()
+#             all_data = [
+#                 row for row in all_data
+#                 if any(search_lower in str(row.get(f, "")).lower() for f in search_fields)
+#             ]
+
+#         total_records = len(all_data)
+#         page = int(page)
+#         page_size = int(page_size) if int(page_size) > 0 else total_records
+#         total_pages = math.ceil(total_records / page_size) if page_size else 1
+
+#         # -------------------------
+#         # Apply pagination only if requested
+#         # -------------------------
+#         if frappe.utils.sbool(is_pagination):
+#             start = (page - 1) * page_size
+#             end = start + page_size
+#             data_to_return = all_data[start:end]
+#         else:
+#             data_to_return = all_data  # return all
+
+#         # -------------------------
+#         # Add grouped child images
+#         # -------------------------
+#         for row in data_to_return:
+#             row["car_repair_images"] = empty_image_structure()
+#             images = frappe.db.get_all(
+#                 "Car Repair Images",
+#                 filters={"parent": row["name"], "parenttype": "Car Repair Request"},
+#                 fields=["image", "image_type"]
+#             )
+#             for img in images:
+#                 key = IMAGE_TYPE_KEY_MAP.get(img.image_type)
+#                 if key:
+#                     row["car_repair_images"][key].append(frappe.utils.get_url(img.image))
+
+#             if row.get("odometer_photo"):
+#                 row["odometer_photo"] = frappe.utils.get_url(row["odometer_photo"])
+
+#         return {
+#             "status": "success",
+#             "data": data_to_return,
+#             "total_records": total_records,
+#             "total_pages": total_pages,
+#             "page": page,
+#             "page_size": page_size,
+#             "is_pagination": frappe.utils.sbool(is_pagination)
+#         }
+
+#     except Exception as e:
+#         frappe.log_error(title="Get Car Repair Request Error", message=frappe.get_traceback())
+#         return {"status": "error", "message": f"Internal Server Error: {str(e)}"}
+
+
+
 @frappe.whitelist(allow_guest=False)
 def get_car_repair_request(
-    page=1,
-    page_size=10,
+    page=None,
+    page_size=None,
     sort_by="creation",
     sort_order="desc",
-    search=None,
-    is_pagination=True
+    search=None
 ):
     import frappe
     import math
@@ -941,7 +1052,7 @@ def get_car_repair_request(
             }
 
         # -------------------------
-        # Fields to fetch
+        # Fields
         # -------------------------
         fields = [
             "name", "customer_name", "email", "phone",
@@ -950,10 +1061,13 @@ def get_car_repair_request(
             "priority", "service_type", "repair_request_date",
             "reason_for_repair", "odometer_value",
             "odometer_value_current", "customer_signature",
-            "driver_name","driver_mob_no","fuel_type"
+            "driver_name", "driver_mob_no", "fuel_type"
         ]
 
-        search_fields = ["name", "customer_name", "make", "model", "license_plate", "service_type", "priority"]
+        search_fields = [
+            "name", "customer_name", "make",
+            "model", "license_plate", "service_type", "priority"
+        ]
 
         # -------------------------
         # Fetch all records
@@ -966,44 +1080,59 @@ def get_car_repair_request(
         )
 
         # -------------------------
-        # Apply search if provided
+        # Search
         # -------------------------
         if search:
-            search_lower = search.lower()
+            search = search.lower()
             all_data = [
                 row for row in all_data
-                if any(search_lower in str(row.get(f, "")).lower() for f in search_fields)
+                if any(search in str(row.get(f, "")).lower() for f in search_fields)
             ]
 
         total_records = len(all_data)
-        page = int(page)
-        page_size = int(page_size) if int(page_size) > 0 else total_records
-        total_pages = math.ceil(total_records / page_size) if page_size else 1
 
         # -------------------------
-        # Apply pagination only if requested
+        # Auto pagination detection
         # -------------------------
-        if frappe.utils.sbool(is_pagination):
+        is_pagination = page is not None or page_size is not None
+
+        if is_pagination:
+            page = int(page or 1)
+            page_size = int(page_size or 10)
+
             start = (page - 1) * page_size
             end = start + page_size
             data_to_return = all_data[start:end]
+
+            total_pages = math.ceil(total_records / page_size)
         else:
-            data_to_return = all_data  # return all
+            # FULL LIST
+            data_to_return = all_data
+            page = None
+            page_size = None
+            total_pages = 1
 
         # -------------------------
-        # Add grouped child images
+        # Add child images
         # -------------------------
         for row in data_to_return:
             row["car_repair_images"] = empty_image_structure()
+
             images = frappe.db.get_all(
                 "Car Repair Images",
-                filters={"parent": row["name"], "parenttype": "Car Repair Request"},
+                filters={
+                    "parent": row["name"],
+                    "parenttype": "Car Repair Request"
+                },
                 fields=["image", "image_type"]
             )
+
             for img in images:
                 key = IMAGE_TYPE_KEY_MAP.get(img.image_type)
                 if key:
-                    row["car_repair_images"][key].append(frappe.utils.get_url(img.image))
+                    row["car_repair_images"][key].append(
+                        frappe.utils.get_url(img.image)
+                    )
 
             if row.get("odometer_photo"):
                 row["odometer_photo"] = frappe.utils.get_url(row["odometer_photo"])
@@ -1015,12 +1144,20 @@ def get_car_repair_request(
             "total_pages": total_pages,
             "page": page,
             "page_size": page_size,
-            "is_pagination": frappe.utils.sbool(is_pagination)
+            "is_pagination": is_pagination
         }
 
-    except Exception as e:
-        frappe.log_error(title="Get Car Repair Request Error", message=frappe.get_traceback())
-        return {"status": "error", "message": f"Internal Server Error: {str(e)}"}
+    except Exception:
+        frappe.log_error(
+            title="Get Car Repair Request Error",
+            message=frappe.get_traceback()
+        )
+        return {
+            "status": "error",
+            "message": "Internal Server Error"
+        }
+
+
 
 
 
