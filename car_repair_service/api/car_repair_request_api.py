@@ -89,7 +89,7 @@ def create_car_repair_request(data):
             "driver_name", "driver_mob_no",
             "odometer_value", "odometer_value_current",
             "fuel_level", "customer_signature",
-            "remark", "fuel_type"
+            "remark", "fuel_type","vehicle_pickup_required"
         ]
 
         for f in fields:
@@ -490,274 +490,6 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
 
 
 
-# @frappe.whitelist(allow_guest=False)
-# def get_car_repair_request(
-#     name=None, 
-#     page=1, 
-#     page_size=10, 
-#     sort_by="creation", 
-#     sort_order="desc", 
-#     search=None, 
-#     is_pagination=False
-# ):
-    
-
-#     try:
-#         extra_params = {"search": search} if search else {}
-#         base_url = frappe.request.host_url.rstrip("/") + frappe.request.path
-
-#         # -------------------------
-#         # SINGLE RECORD
-#         # -------------------------
-#         if name:
-#             if not frappe.db.exists("Car Repair Request", name):
-#                 return {
-#                     "status": "error",
-#                     "message": f"Car Repair Request '{name}' not found"
-#                 }
-
-#             doc = frappe.get_doc("Car Repair Request", name)
-#             data = doc.as_dict()
-
-#             data["vehicle_concern"] = [
-#                 {"vehicle_concern": vc.vehicle_concern}
-#                 for vc in doc.get("vehicle_concern", [])
-#             ]
-
-#             data["car_repair_images"] = [
-#                 {"image": frappe.utils.get_url(img.image)}
-#                 for img in doc.get("car_repair_images", [])
-#             ]
-
-#             if data.get("odometer_photo"):
-#                 data["odometer_photo"] = frappe.utils.get_url(data["odometer_photo"])
-
-#             return {
-#                 "status": "success",
-#                 "data": data
-#             }
-
-#         # -------------------------
-#         # PAGINATED LIST
-#         # -------------------------
-#         fields = [
-#             "name", "customer_name", "email", "phone",
-#             "make", "model", "license_plate", "assign_adviser",
-#             "car_manufacturing_year", "odometer_photo",
-#             "priority", "service_type", "repair_request_date",
-#             "reason_for_repair", "odometer_value","odometer_value_current", "customer_signature"
-#         ]
-
-#         search_fields = [
-#             "customer_name", "make", "model", "license_plate",
-#             "service_type", "priority"
-#         ]
-
-#         raw = get_paginated_data(
-#             doctype="Car Repair Request",
-#             fields=fields,
-#             search=search,
-#             filters={},
-#             sort_by=sort_by,
-#             sort_order=sort_order,
-#             page=int(page),
-#             page_size=int(page_size),
-#             search_fields=search_fields,
-#             is_pagination=frappe.utils.sbool(is_pagination),
-#             base_url=base_url,
-#             extra_params=extra_params
-#         )
-
-#         # ----------------------------------------
-#         #  NORMALIZE RAW RESPONSE SAFELY
-#         # ----------------------------------------
-#         if isinstance(raw, dict):
-#             data_list = raw.get("data", [])
-#         elif isinstance(raw, list):
-#             data_list = raw
-#             raw = {"data": raw}    # convert list → dict
-#         else:
-#             data_list = []
-#             raw = {"data": []}
-
-#         # ----------------------------------------
-#         # Add child images + convert URLs
-#         # ----------------------------------------
-#         for row in data_list:
-
-#             images = frappe.db.get_all(
-#                 "Car Repair Images",
-#                 filters={"parent": row["name"], "parenttype": "Car Repair Request"},
-#                 fields=["image"]
-#             )
-
-#             row["car_repair_images"] = [
-#                 frappe.utils.get_url(i["image"]) for i in images
-#             ]
-
-#             if row.get("odometer_photo"):
-#                 row["odometer_photo"] = frappe.utils.get_url(row["odometer_photo"])
-
-#         return raw
-
-#     except Exception as e:
-#         frappe.log_error(title="Get Car Repair Request Error", message=str(e))
-#         return {
-#             "status": "error",
-#             "message": f"Internal Server Error: {str(e)}"
-#         }
-
-
-
-# @frappe.whitelist(allow_guest=False)
-# def get_car_repair_request(
-#     name=None, 
-#     page=1, 
-#     page_size=10, 
-#     sort_by="creation", 
-#     sort_order="desc", 
-#     search=None, 
-#     is_pagination=False
-# ):
-#     try:
-#         extra_params = {"search": search} if search else {}
-#         base_url = frappe.request.host_url.rstrip("/") + frappe.request.path
-
-#         IMAGE_TYPE_KEY_MAP = {
-#             "Front View": "front_view",
-#             "Back View": "back_view",
-#             "Left View": "left_view",
-#             "Right View": "right_view"
-#         }
-
-#         def empty_image_structure():
-#             return {
-#                 "front_view": [],
-#                 "back_view": [],
-#                 "left_view": [],
-#                 "right_view": []
-#             }
-
-#         # -------------------------
-#         # SINGLE RECORD
-#         # -------------------------
-#         if name:
-#             if not frappe.db.exists("Car Repair Request", name):
-#                 return {
-#                     "status": "error",
-#                     "message": f"Car Repair Request '{name}' not found"
-#                 }
-
-#             doc = frappe.get_doc("Car Repair Request", name)
-#             data = doc.as_dict()
-
-#             # vehicle concerns
-#             data["vehicle_concern"] = [
-#                 {"vehicle_concern": vc.vehicle_concern}
-#                 for vc in doc.get("vehicle_concern", [])
-#             ]
-
-#             # grouped images
-#             grouped_images = empty_image_structure()
-#             for img in doc.get("car_repair_images", []):
-#                 key = IMAGE_TYPE_KEY_MAP.get(img.image_type)
-#                 if key:
-#                     grouped_images[key].append(
-#                         frappe.utils.get_url(img.image)
-#                     )
-
-#             data["car_repair_images"] = grouped_images
-
-#             if data.get("odometer_photo"):
-#                 data["odometer_photo"] = frappe.utils.get_url(
-#                     data["odometer_photo"]
-#                 )
-
-#             return {
-#                 "status": "success",
-#                 "data": data
-#             }
-
-#         # -------------------------
-#         # PAGINATED LIST
-#         # -------------------------
-#         fields = [
-#             "name", "customer_name", "email", "phone",
-#             "make", "model", "license_plate", "assign_adviser",
-#             "car_manufacturing_year", "odometer_photo",
-#             "priority", "service_type", "repair_request_date",
-#             "reason_for_repair", "odometer_value",
-#             "odometer_value_current", "customer_signature"
-#         ]
-
-#         search_fields = [
-#             "customer_name", "make", "model",
-#             "license_plate", "service_type", "priority"
-#         ]
-
-#         raw = get_paginated_data(
-#             doctype="Car Repair Request",
-#             fields=fields,
-#             search=search,
-#             filters={},
-#             sort_by=sort_by,
-#             sort_order=sort_order,
-#             page=int(page),
-#             page_size=int(page_size),
-#             search_fields=search_fields,
-#             is_pagination=frappe.utils.sbool(is_pagination),
-#             base_url=base_url,
-#             extra_params=extra_params
-#         )
-
-#         # normalize
-#         if isinstance(raw, dict):
-#             data_list = raw.get("data", [])
-#         else:
-#             data_list = raw
-#             raw = {"data": data_list}
-
-#         # ----------------------------------------
-#         # ADD GROUPED CHILD IMAGES
-#         # ----------------------------------------
-#         for row in data_list:
-#             row["car_repair_images"] = empty_image_structure()
-
-#             images = frappe.db.get_all(
-#                 "Car Repair Images",
-#                 filters={
-#                     "parent": row["name"],
-#                     "parenttype": "Car Repair Request"
-#                 },
-#                 fields=["image", "image_type"]
-#             )
-
-#             for img in images:
-#                 key = IMAGE_TYPE_KEY_MAP.get(img.image_type)
-#                 if key:
-#                     row["car_repair_images"][key].append(
-#                         frappe.utils.get_url(img.image)
-#                     )
-
-#             if row.get("odometer_photo"):
-#                 row["odometer_photo"] = frappe.utils.get_url(
-#                     row["odometer_photo"]
-#                 )
-
-#         return raw
-
-#     except Exception as e:
-#         frappe.log_error(
-#             title="Get Car Repair Request Error",
-#             message=frappe.get_traceback()
-#         )
-#         return {
-#             "status": "error",
-#             "message": f"Internal Server Error: {str(e)}"
-#         }
-
-
-
 
 
 
@@ -968,304 +700,77 @@ def get_car_repair_request_by_id(name):
 # ====================================================
 # UPDATE Car Repair Request
 # ====================================================
-# @frappe.whitelist(allow_guest=False)
-# def update_car_repair_request(name, data):
-   
-#     """
-#     Update an existing Car Repair Request.
-#     - Supports partial updates (only provided fields)
-#     - Updates child tables (vehicle_concern, car_repair_images)
-#     """
-#     import json
-
-#     try:
-#         # Ensure request payload is parsed
-#         data = json.loads(data) if isinstance(data, str) else data
-
-#         # Validate if document exists
-#         if not frappe.db.exists("Car Repair Request", name):
-#             return {"status": "error", "message": f"Car Repair Request '{name}' not found"}
-
-#         doc = frappe.get_doc("Car Repair Request", name)
-
-#         # ✅ Allowed updatable fields
-#         updatable_fields = [
-#             "email", "phone", "make", "model", "assign_adviser", "car", "license_plate",
-#             "chassis_no", "car_manufacturing_year", "odometer_photo", "priority",
-#             "service_type", "repair_request_date", "driver_name", "driver_mob_no",
-#             "odometer_value", "fuel_level", "vehicle_pick_up", "customer_signature",
-#             "remark", "fuel_type"
-#         ]
-
-#         # ✅ Update only provided fields
-#         for f in updatable_fields:
-#             if f in data:
-#                 doc.set(f, data[f])
-
-#         # ✅ Update child table: Vehicle Concerns
-#         if "vehicle_concern" in data and isinstance(data["vehicle_concern"], list):
-#             doc.set("vehicle_concern", [])
-#             for vc in data["vehicle_concern"]:
-#                 if vc.get("vehicle_concern"):
-#                     doc.append("vehicle_concern", {"vehicle_concern": vc["vehicle_concern"]})
-
-#         # ✅ Update child table: Car Repair Images
-#         if "car_repair_images" in data and isinstance(data["car_repair_images"], list):
-#             doc.set("car_repair_images", [])
-#             for img in data["car_repair_images"]:
-#                 if img.get("image"):
-#                     doc.append("car_repair_images", {"image": img["image"]})
-
-#         # ✅ Save changes
-#         doc.save(ignore_permissions=True)
-#         frappe.db.commit()
-
-#         return {
-#             "status": "success",
-#             "status_code":201,
-#             "message": f"Car Repair Request '{name}' updated successfully",
-#             "updated_data": doc.as_dict()
-#         }
-
-#     except Exception as e:
-#         frappe.log_error(title="Update Car Repair Request Error", message=str(e))
-#         return {"status": "error", "message": str(e)}
-
-
-
-
-# @frappe.whitelist(allow_guest=False)
-# def update_car_repair_request(data):
-#     """
-#     Update an existing Car Repair Request
-#     - `name` is expected INSIDE data
-#     - Partial updates supported
-#     - Vehicle concern update
-#     - Grouped car repair images update
-#     """
-#     import json
-#     try:
-#         # -------------------------
-#         # PARSE PAYLOAD
-#         # -------------------------
-#         # payload = json.loads(data) if isinstance(data, str) else data
-#         # data = payload.get("data", {})
-
-#         # name = data.get("name")
-#         # if not name:
-#         #     return {
-#         #         "status": "error",
-#         #         "message": "Missing 'name' inside data"
-#         #     }
-        
-#         # -------------------------
-#         # PARSE PAYLOAD (FLAT JSON)
-#         # -------------------------
-#         payload = json.loads(data) if isinstance(data, str) else data
-
-#         # If old format exists, still support it
-#         data = payload.get("data") if isinstance(payload, dict) and "data" in payload else payload
-
-#         name = data.get("name")
-#         if not name:
-#             return {
-#                 "status": "error",
-#                 "message": "Missing 'name'"
-#             }
-
-        
-        
-#         if not frappe.db.exists("Car Repair Request", name):
-#             return {
-#                 "status": "error",
-#                 "message": f"Car Repair Request '{name}' not found"
-#             }
-
-#         doc = frappe.get_doc("Car Repair Request", name)
-
-#         # -------------------------
-#         # UPDATABLE FIELDS
-#         # -------------------------
-#         updatable_fields = [
-#             "email", "phone", "make", "model", "assign_adviser",
-#             "car", "license_plate", "chassis_no",
-#             "car_manufacturing_year", "priority",
-#             "service_type", "repair_request_date",
-#             "driver_name", "driver_mob_no",
-#             "odometer_value", "fuel_level",
-#             "vehicle_pick_up", "customer_signature",
-#             "remark", "fuel_type"
-#         ]
-
-#         for f in updatable_fields:
-#             if f in data:
-#                 doc.set(f, data[f])
-
-#         # -------------------------
-#         # VEHICLE CONCERNS
-#         # -------------------------
-#         if isinstance(data.get("vehicle_concern"), list):
-#             doc.set("vehicle_concern", [])
-#             for vc in data["vehicle_concern"]:
-#                 if vc.get("vehicle_concern"):
-#                     doc.append("vehicle_concern", {
-#                         "vehicle_concern": vc["vehicle_concern"]
-#                     })
-                    
-                    
-                    
-#                     def normalize_file_url(url):
-#                         if not url:
-#                             return None
-#                         if url.startswith("http"):
-#                             if "/files/" in url:
-#                                 return "/files/" + url.split("/files/", 1)[1]
-#                             return None
-#                         return url
-
-#         # -------------------------
-#         # CAR REPAIR IMAGES (GROUPED)
-#         # -------------------------
-#         IMAGE_KEY_TYPE_MAP = {
-#             "front_view": "Front View",
-#             "back_view": "Back View",
-#             "left_view": "Left View",
-#             "right_view": "Right View"
-#         }
-
-#         if isinstance(data.get("car_repair_images"), dict):
-#             # Clear existing images
-#             doc.set("car_repair_images", [])
-
-#             for view_key, urls in data["car_repair_images"].items():
-#                 image_type = IMAGE_KEY_TYPE_MAP.get(view_key)
-#                 if not image_type or not isinstance(urls, list):
-#                     continue
-
-#                 # for url in urls:
-#                 #     if url:
-#                 #         doc.append("car_repair_images", {
-#                 #             "image": url,
-#                 #             "image_type": image_type
-#                 #         })
-#                 for url in urls:
-#                     file_path = normalize_file_url(url)
-#                     if file_path:
-#                         doc.append("car_repair_images", {
-#                             "image": file_path,
-#                             "image_type": image_type
-#                         })
-
-
-#         # -------------------------
-#         # SAVE
-#         # -------------------------
-#         doc.save(ignore_permissions=True)
-#         frappe.db.commit()
-
-#         # -------------------------
-#         # FORMAT RESPONSE (GROUPED)
-#         # -------------------------
-#         IMAGE_TYPE_KEY_MAP = {
-#             "Front View": "front_view",
-#             "Back View": "back_view",
-#             "Left View": "left_view",
-#             "Right View": "right_view"
-#         }
-
-#         grouped_images = {
-#             "front_view": [],
-#             "back_view": [],
-#             "left_view": [],
-#             "right_view": []
-#         }
-
-#         for img in doc.car_repair_images:
-#             key = IMAGE_TYPE_KEY_MAP.get(img.image_type)
-#             if key:
-#                 grouped_images[key].append(
-#                     frappe.utils.get_url(img.image)
-#                 )
-
-#         return {
-#             "status": "success",
-#             "status_code": 200,
-#             "message": f"Car Repair Request '{name}' updated successfully",
-#             "car_repair_images": grouped_images
-#         }
-
-#     except Exception as e:
-#         frappe.log_error(
-#             title="Update Car Repair Request Error",
-#             message=frappe.get_traceback()
-#         )
-#         return {
-#             "status": "error",
-#             "message": str(e)
-#         }
-
+import frappe
+import json
 import base64
 import uuid
-
+from frappe.utils.file_manager import save_file
 
 @frappe.whitelist(allow_guest=False)
-def update_car_repair_request(data):
+def update_car_repair_request():
     """
-    FINAL PRODUCTION VERSION
-    - Safe partial updates
-    - View-wise image replacement
-    - Mandatory validation handled correctly
+    Update Car Repair Request:
+    - Append new images to existing child table (front/back/left/right)
+    - Updates normal fields and odometer photo
+    - Returns child table images as '/files/<filename>' for all images
+    - Avoids duplicates
     """
-
     try:
         # -------------------------
-        # PARSE PAYLOAD
+        # Get request data
         # -------------------------
-        payload = json.loads(data) if isinstance(data, str) else data
-        data = payload.get("data") if isinstance(payload, dict) and "data" in payload else payload
+        if frappe.form_dict.get("data"):
+            data = frappe.form_dict.get("data")
+            data = json.loads(data) if isinstance(data, str) else data
+        else:
+            data = dict(frappe.form_dict)
 
+        # -------------------------
+        # Validate 'name'
+        # -------------------------
         name = data.get("name")
         if not name:
             return {"status": "error", "message": "Missing 'name'"}
 
+        if not frappe.db.exists("Car Repair Request", name):
+            return {"status": "error", "message": f"Car Repair Request '{name}' not found"}
+
         doc = frappe.get_doc("Car Repair Request", name)
 
         # -------------------------
-        # EXISTING IMAGE COUNT (IMPORTANT)
+        # Update normal fields
         # -------------------------
-        existing_image_count = len(doc.car_repair_images or [])
-
-        # -------------------------
-        # UPDATE NORMAL FIELDS
-        # -------------------------
-        updatable_fields = [
-            "email", "phone", "make", "model",
-            "license_plate", "priority", "remark"
-        ]
-
+        updatable_fields = ["email", "phone", "make", "model", "license_plate", "priority", "remark"]
         for field in updatable_fields:
-            if field in data:
+            if field in data and data[field]:
                 doc.set(field, data[field])
 
         # -------------------------
-        # HANDLE ODOMETER PHOTO (MANDATORY)
+        # Update odometer photo
         # -------------------------
-        if data.get("odometer_photo"):
-            image_bytes = base64.b64decode(data["odometer_photo"])
-            filename = f"odometer_{uuid.uuid4()}.png"
+        odometer_photo = data.get("odometer_photo")
+        image_bytes = None
+        if odometer_photo:
+            try:
+                image_bytes = base64.b64decode(odometer_photo)
+            except Exception:
+                file_obj = frappe.request.files.get("odometer_photo")
+                if file_obj:
+                    image_bytes = file_obj.read()
 
+        if image_bytes:
+            filename = f"odometer_{uuid.uuid4()}.png"
             file_doc = save_file(
-                filename=filename,
-                content=image_bytes,
+                filename,
+                image_bytes,
                 dt="Car Repair Request",
                 dn=doc.name,
                 is_private=0
             )
-
-            doc.odometer_photo = file_doc.file_url
+            doc.odometer_photo = f"/files/{file_doc.file_name}"  # store path
 
         # -------------------------
-        # IMAGE VIEW MAP
+        # Image view map
         # -------------------------
         IMAGE_KEY_TYPE_MAP = {
             "front_view": "Front View",
@@ -1274,67 +779,86 @@ def update_car_repair_request(data):
             "right_view": "Right View"
         }
 
-        # -------------------------
-        # UPDATE IMAGES (SAFE)
-        # -------------------------
-        if isinstance(data.get("car_repair_images"), dict):
+        if not hasattr(doc, "car_repair_images") or doc.car_repair_images is None:
+            doc.car_repair_images = []
 
-            for view_key, images in data["car_repair_images"].items():
+        # -------------------------
+        # Track existing files to avoid duplicates
+        # -------------------------
+        existing_files = set()
+        for row in doc.car_repair_images:
+            if row.image:
+                existing_files.add(row.image)  # now stores paths
+
+        # -------------------------
+        # Append new images from JSON payload
+        # -------------------------
+        images_payload = data.get("car_repair_images")
+        if images_payload and isinstance(images_payload, dict):
+            for view_key, images in images_payload.items():
                 image_type = IMAGE_KEY_TYPE_MAP.get(view_key)
-
-                if not image_type or not images:
+                if not image_type or not isinstance(images, list):
                     continue
-
-                # Remove old images of this view ONLY
-                doc.car_repair_images = [
-                    row for row in doc.car_repair_images
-                    if row.image_type != image_type
-                ]
-
                 for img in images:
-                    image_bytes = base64.b64decode(img)
-                    filename = f"{uuid.uuid4()}.png"
-
+                    if not img:
+                        continue
+                    try:
+                        image_bytes = base64.b64decode(img)
+                    except Exception:
+                        continue
                     file_doc = save_file(
-                        filename=filename,
-                        content=image_bytes,
+                        f"{uuid.uuid4()}.png",
+                        image_bytes,
                         dt="Car Repair Request",
                         dn=doc.name,
                         is_private=0
                     )
+                    file_url = f"/files/{file_doc.file_name}"
+                    if file_url not in existing_files:
+                        doc.append("car_repair_images", {
+                            "image": file_url,      # store path
+                            "image_type": image_type
+                        })
+                        existing_files.add(file_url)
 
+        # -------------------------
+        # Append new images from form-data files
+        # -------------------------
+        for view_key, image_type in IMAGE_KEY_TYPE_MAP.items():
+            files = frappe.request.files.getlist(view_key)
+            for f in files:
+                file_doc = save_file(
+                    f"{uuid.uuid4()}_{f.filename}",
+                    f.read(),
+                    dt="Car Repair Request",
+                    dn=doc.name,
+                    is_private=0
+                )
+                file_url = f"/files/{file_doc.file_name}"
+                if file_url not in existing_files:
                     doc.append("car_repair_images", {
-                        "image": file_doc.file_url,
+                        "image": file_url,          # store path
                         "image_type": image_type
                     })
+                    existing_files.add(file_url)
 
         # -------------------------
-        # FINAL VALIDATION (CORRECT)
+        # Save document
         # -------------------------
-        final_image_count = len(doc.car_repair_images or [])
-
-        if existing_image_count == 0 and final_image_count == 0:
-            frappe.throw("At least one car image is required")
-
-        # -------------------------
-        # SAVE
-        # -------------------------
+        doc.flags.ignore_validate = True
+        doc.flags.ignore_mandatory = True
         doc.save(ignore_permissions=True)
         frappe.db.commit()
 
         # -------------------------
-        # RESPONSE
+        # Prepare response with '/files/<filename>' for all images
         # -------------------------
-        result_images = {
-            "front_view": [],
-            "back_view": [],
-            "left_view": [],
-            "right_view": []
-        }
+        result_images = {k: [] for k in IMAGE_KEY_TYPE_MAP.keys()}
 
         for row in doc.car_repair_images:
             key = row.image_type.lower().replace(" ", "_")
-            result_images[key].append(get_url(row.image))
+            if row.image:
+                result_images[key].append(row.image)  # already path
 
         return {
             "status": "success",
@@ -1344,9 +868,8 @@ def update_car_repair_request(data):
         }
 
     except Exception as e:
-        frappe.log_error("Update Car Repair Request Error", frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback(), "Update Car Repair Request Error")
         return {"status": "error", "message": str(e)}
-
 
 
 # ====================================================
