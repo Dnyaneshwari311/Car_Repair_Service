@@ -207,7 +207,26 @@ from car_repair_service.api.utils import get_paginated_data
 #         }
 
 
+import base64
+import os
+import mimetypes
 
+
+from frappe.utils.file_manager import get_file
+
+def file_url_to_base64(file_url):
+    if not file_url:
+        return None
+
+    # Get the File document
+    file_doc = frappe.get_doc("File", {"file_url": file_url})
+    content = file_doc.get_content()  # Returns bytes
+
+    mime_type, _ = mimetypes.guess_type(file_doc.file_name)
+    mime_type = mime_type or "image/png"
+
+    encoded = base64.b64encode(content).decode()
+    return f"data:{mime_type};base64,{encoded}"
 
 
 @frappe.whitelist(allow_guest=False)
@@ -300,7 +319,27 @@ def create_car_repair_request(data):
         doc.customer_name = customer_doc.customer_name
 
         doc.insert(ignore_permissions=True, ignore_mandatory=True)
+         
+         # ---------------------------
+        # SIGNATURE FILE
+        # ---------------------------
+        # ---------------------------
+        # SIGNATURE IMAGE
+        # ---------------------------
+        signature_upload = files.get("signature")
+        if not signature_upload or not signature_upload.filename:
+            frappe.throw(_("Signature image is required"))
 
+        signature_file = save_file(
+            fname=signature_upload.filename,
+            content=signature_upload.stream.read(),
+            dt="Car Repair Request",
+            dn=doc.name,
+            is_private=0
+        )
+        doc.signature = signature_file.file_url
+
+                
         # ---------------------------
         # CUSTOMER SIGNATURE
         # ---------------------------
@@ -356,6 +395,7 @@ def create_car_repair_request(data):
                 if upload and upload.filename:
                     file_doc = save_file(
                         fname=upload.filename,
+                        
                         content=upload.stream.read(),
                         dt="Car Repair Request",
                         dn=doc.name,
@@ -372,13 +412,18 @@ def create_car_repair_request(data):
         doc.save(ignore_permissions=True)
         frappe.db.commit()
         frappe.clear_messages()
+        signature_base64 = file_url_to_base64(doc.customer_signature)
+
         return {
             "status": "success",
             "status_code": 201,
             "message": "Car Repair Request created successfully",
             "name": doc.name,
-            "customer_signature": doc.customer_signature
+
+            # THIS IS NOW BASE64 (NOT FILE PATH)
+            "customer_signature": signature_base64
         }
+
 
     except Exception as e:
         frappe.log_error("Create Car Repair Request Error", frappe.get_traceback())

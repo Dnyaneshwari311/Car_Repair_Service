@@ -40,6 +40,7 @@
   "drop_address",
   "pick_up_address",
   "customer_signature",
+  "signature",
   "car_repair_images",
   "remark",
   "fuel_type"
@@ -255,6 +256,12 @@
    "fieldtype": "Link",
    "label": "Assigned To",
    "options": "Employee"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Signature"
   }
  ],
  "grid_page_length": 50,
@@ -265,7 +272,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2026-01-02 11:05:25.190689",
+ "modified": "2026-01-06 18:43:11.138561",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",
