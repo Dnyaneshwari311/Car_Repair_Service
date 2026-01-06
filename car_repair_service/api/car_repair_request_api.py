@@ -89,7 +89,7 @@ def create_car_repair_request(data):
             "driver_name", "driver_mob_no",
             "odometer_value", "odometer_value_current",
             "fuel_level", "customer_signature",
-            "remark", "fuel_type","vehicle_pickup_required"
+            "remark", "fuel_type","vehicle_pickup_required","pickup_address","same_as_drop_address","drop_address"
         ]
 
         for f in fields:
@@ -759,7 +759,9 @@ def update_car_repair_request():
                     image_bytes = file_obj.read()
 
         if image_bytes:
-            filename = f"odometer_{uuid.uuid4()}.png"
+            # filename = f"odometer_{uuid.uuid4()}.png"
+            filename = "odometer.png"
+
             file_doc = save_file(
                 filename,
                 image_bytes,
@@ -806,13 +808,22 @@ def update_car_repair_request():
                         image_bytes = base64.b64decode(img)
                     except Exception:
                         continue
+                    # file_doc = save_file(
+                    #     f"{uuid.uuid4()}.png",
+                    #     image_bytes,
+                    #     dt="Car Repair Request",
+                    #     dn=doc.name,
+                    #     is_private=0
+                    # )
                     file_doc = save_file(
-                        f"{uuid.uuid4()}.png",
+                        "image.png",   # or any readable name
                         image_bytes,
                         dt="Car Repair Request",
                         dn=doc.name,
                         is_private=0
                     )
+
+                    
                     file_url = f"/files/{file_doc.file_name}"
                     if file_url not in existing_files:
                         doc.append("car_repair_images", {
@@ -827,13 +838,21 @@ def update_car_repair_request():
         for view_key, image_type in IMAGE_KEY_TYPE_MAP.items():
             files = frappe.request.files.getlist(view_key)
             for f in files:
+                # file_doc = save_file(
+                #     f"{uuid.uuid4()}_{f.filename}",
+                #     f.read(),
+                #     dt="Car Repair Request",
+                #     dn=doc.name,
+                #     is_private=0
+                # )
                 file_doc = save_file(
-                    f"{uuid.uuid4()}_{f.filename}",
+                    f.filename,   # 👈 ORIGINAL filename only
                     f.read(),
                     dt="Car Repair Request",
                     dn=doc.name,
                     is_private=0
                 )
+
                 file_url = f"/files/{file_doc.file_name}"
                 if file_url not in existing_files:
                     doc.append("car_repair_images", {
