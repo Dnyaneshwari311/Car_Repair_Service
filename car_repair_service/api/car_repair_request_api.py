@@ -922,6 +922,8 @@ def get_car_repair_request(
     is_pagination=True
 ):
     import frappe
+    import math
+
     try:
         IMAGE_TYPE_KEY_MAP = {
             "Front View": "front_view",
@@ -938,26 +940,27 @@ def get_car_repair_request(
                 "right_view": []
             }
 
+        # -------------------------
+        # Fields to fetch
+        # -------------------------
         fields = [
             "name", "customer_name", "email", "phone",
             "make", "model", "license_plate", "assign_adviser",
             "car_manufacturing_year", "odometer_photo",
             "priority", "service_type", "repair_request_date",
             "reason_for_repair", "odometer_value",
-            "odometer_value_current", "customer_signature","driver_name","driver_mob_no","fuel_type"
+            "odometer_value_current", "customer_signature",
+            "driver_name","driver_mob_no","fuel_type"
         ]
-
-        filters = {}
 
         search_fields = ["name", "customer_name", "make", "model", "license_plate", "service_type", "priority"]
 
         # -------------------------
-        # Fetch ALL records
+        # Fetch all records
         # -------------------------
         all_data = frappe.get_all(
             "Car Repair Request",
             fields=fields,
-            filters=filters,
             order_by=f"{sort_by} {sort_order}",
             as_list=False
         )
@@ -973,21 +976,24 @@ def get_car_repair_request(
             ]
 
         total_records = len(all_data)
+        page = int(page)
+        page_size = int(page_size) if int(page_size) > 0 else total_records
+        total_pages = math.ceil(total_records / page_size) if page_size else 1
 
         # -------------------------
-        # Apply Pagination
+        # Apply pagination only if requested
         # -------------------------
         if frappe.utils.sbool(is_pagination):
-            start = (int(page) - 1) * int(page_size)
-            end = start + int(page_size)
-            paginated_data = all_data[start:end]
+            start = (page - 1) * page_size
+            end = start + page_size
+            data_to_return = all_data[start:end]
         else:
-            paginated_data = all_data  # return all
+            data_to_return = all_data  # return all
 
         # -------------------------
-        # Add grouped images
+        # Add grouped child images
         # -------------------------
-        for row in paginated_data:
+        for row in data_to_return:
             row["car_repair_images"] = empty_image_structure()
             images = frappe.db.get_all(
                 "Car Repair Images",
@@ -1004,10 +1010,11 @@ def get_car_repair_request(
 
         return {
             "status": "success",
-            "data": paginated_data,
+            "data": data_to_return,
             "total_records": total_records,
-            "page": int(page),
-            "page_size": int(page_size),
+            "total_pages": total_pages,
+            "page": page,
+            "page_size": page_size,
             "is_pagination": frappe.utils.sbool(is_pagination)
         }
 
