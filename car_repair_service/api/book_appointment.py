@@ -36,6 +36,8 @@ def create_book_appointment(data):
         pickup_address = data.get("pickup_address")
         same_as_pick_up_address = data.get("same_as_pick_up_address")  # 0 or 1
         drop_address = data.get("drop_address")
+        assigned_to =data.get("assigned_to")
+        
 
         # ---------------------------
         #   STRICT DATE VALIDATION
@@ -153,7 +155,9 @@ def create_book_appointment(data):
             "pickup_address": pickup_address,
             "same_as_pick_up_address": same_as_pick_up_address,
             "drop_address": drop_address,
-            "status": "Open"
+            "status": "Open",
+            "description":description,
+            "assigned_to":assigned_to
         })
 
         appointment.insert(ignore_permissions=True)
@@ -511,7 +515,10 @@ def get_book_appointment(appointment_id):
             "appointment_date": doc.appointment_date,
             "appointment_time": doc.appointment_time,
             "vehicle_pickup_required": doc.vehicle_pickup_required,
-            "pickup_address": doc.pickup_address,
+            "pickup_address": doc.pickup_address, 
+            "same_as_pick_up_address":doc.same_as_pick_up_address,
+            "drop_address":doc.drop,
+            "assigned_to":doc.assigned_to,
             "status": doc.status,
             "creation": doc.creation,
             "modified": doc.modified
