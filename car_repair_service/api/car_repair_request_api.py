@@ -521,6 +521,11 @@ def create_car_diagnosis(customer_name=None, customer=None):
         diagnosis.vehicle_pick_up = req_doc.vehicle_pick_up
         diagnosis.customer_signature = req_doc.customer_signature
         diagnosis.assign_adviser =req_doc.assign_adviser
+        
+        
+        if req_doc.signature:
+            diagnosis.signature = req_doc.signature
+
 
         # ✅ Auto-fill Reference No from Car Repair Request
         diagnosis.reference_no = req_doc.name
