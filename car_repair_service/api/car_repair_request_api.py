@@ -239,6 +239,216 @@ def create_car_repair_request(data):
 
 
 
+# import frappe
+# from frappe import _
+# import json
+# from frappe.utils.file_manager import save_file
+# from car_repair_service.api.role_validation import validate_api_access
+
+
+# @frappe.whitelist(allow_guest=False)
+# def create_car_repair_request(data):
+#     validate_api_access("Car Repair Request")
+
+#     try:
+#         data = json.loads(data) if isinstance(data, str) else data
+#         files = frappe.request.files
+
+#         # ---------------------------
+#         # BASIC DATA
+#         # ---------------------------
+#         customer_name = data.get("customer_name")
+#         email = data.get("email")
+#         phone = data.get("phone")
+#         car = data.get("car")
+#         license_plate = data.get("license_plate")
+#         vehicle_pickup_required = data.get("vehicle_pickup_required")
+
+#         if not customer_name or not email:
+#             frappe.throw(_("Missing customer_name or email"))
+
+#         # ---------------------------
+#         # DUPLICATE CHECK
+#         # ---------------------------
+#         existing_crr = frappe.get_all(
+#             "Car Repair Request",
+#             filters={
+#                 "customer_name": customer_name,
+#                 "car": car,
+#                 "license_plate": license_plate
+#             },
+#             limit=1
+#         )
+
+#         if existing_crr:
+#             return {
+#                 "status": "exists",
+#                 "status_code": 200,
+#                 "message": f"Car Repair Request already exists: {existing_crr[0].name}",
+#                 "name": existing_crr[0].name
+#             }
+
+#         # ---------------------------
+#         # CUSTOMER CREATE / FETCH
+#         # ---------------------------
+#         customer_name_db = frappe.db.exists("Customer", {"email_id": email})
+
+#         if customer_name_db:
+#             customer_doc = frappe.get_doc("Customer", customer_name_db)
+#         else:
+#             customer_doc = frappe.new_doc("Customer")
+#             customer_doc.customer_name = customer_name
+#             customer_doc.email_id = email
+#             customer_doc.mobile_no = phone
+#             customer_doc.customer_group = "Individual"
+#             customer_doc.territory = "All Territories"
+#             customer_doc.insert(ignore_permissions=True)
+
+#         # ---------------------------
+#         # VEHICLE MAKE / MODEL
+#         # ---------------------------
+#         make = data.get("make")
+#         model = data.get("model")
+
+#         if make and not frappe.db.exists("Vehicle Make", {"make": make}):
+#             frappe.get_doc({
+#                 "doctype": "Vehicle Make",
+#                 "make": make
+#             }).insert(ignore_permissions=True)
+
+#         if model and not frappe.db.exists("Vehicle Model", {"model": model}):
+#             frappe.get_doc({
+#                 "doctype": "Vehicle Model",
+#                 "model": model
+#             }).insert(ignore_permissions=True)
+
+#         # ---------------------------
+#         # CREATE CAR REPAIR REQUEST
+#         # ---------------------------
+#         doc = frappe.new_doc("Car Repair Request")
+
+#         fields = [
+#             "email", "phone", "make", "model", "assign_adviser",
+#             "car", "license_plate", "chassis_no",
+#             "car_manufacturing_year", "priority",
+#             "service_type", "repair_request_date",
+#             "driver_name", "driver_mob_no",
+#             "odometer_value", "odometer_value_current",
+#             "fuel_level", "remark", "fuel_type","assigned_to"
+#             "vehicle_pickup_required", "pickup_address",
+#             "same_as_pick_up_address", "drop_address"
+#         ]
+
+#         for f in fields:
+#             if f in data:
+#                 doc.set(f, data[f])
+
+#         doc.customer = customer_doc.name
+#         doc.customer_name = customer_doc.customer_name
+
+#         doc.insert(ignore_permissions=True, ignore_mandatory=True)
+
+#         # ---------------------------
+#         # SIGNATURE IMAGE (CONDITIONAL)
+#         # ---------------------------
+#         signature_upload = files.get("signature")
+
+#         if vehicle_pickup_required == "Yes":
+#             if not signature_upload or not signature_upload.filename:
+#                 frappe.throw(_("Signature image is required when vehicle pickup is requested"))
+
+#             signature_file = save_file(
+#                 fname=signature_upload.filename,
+#                 content=signature_upload.stream.read(),
+#                 dt="Car Repair Request",
+#                 dn=doc.name,
+#                 is_private=0
+#             )
+#             doc.signature = signature_file.file_url
+
+#         # ---------------------------
+#         # ODOMETER PHOTO (ALWAYS REQUIRED)
+#         # ---------------------------
+#         odometer_upload = files.get("odometer_photo")
+#         if not odometer_upload or not odometer_upload.filename:
+#             frappe.throw(_("Odometer Photo is required"))
+
+#         odometer_file = save_file(
+#             fname=odometer_upload.filename,
+#             content=odometer_upload.stream.read(),
+#             dt="Car Repair Request",
+#             dn=doc.name,
+#             is_private=0
+#         )
+#         doc.odometer_photo = odometer_file.file_url
+
+#         # ---------------------------
+#         # VEHICLE CONCERNS
+#         # ---------------------------
+#         for vc in data.get("vehicle_concern", []):
+#             doc.append("vehicle_concern", {
+#                 "vehicle_concern": vc.get("vehicle_concern")
+#             })
+
+#         # ---------------------------
+#         # CAR REPAIR IMAGES (CONDITIONAL)
+#         # ---------------------------
+#         IMAGE_FIELD_MAP = {
+#             "front_view": "Front View",
+#             "back_view": "Back View",
+#             "left_view": "Left View",
+#             "right_view": "Right View",
+#         }
+
+#         for field, image_type in IMAGE_FIELD_MAP.items():
+#             for upload in files.getlist(field):
+#                 if upload and upload.filename:
+#                     file_doc = save_file(
+#                         fname=upload.filename,
+#                         content=upload.stream.read(),
+#                         dt="Car Repair Request",
+#                         dn=doc.name,
+#                         is_private=0
+#                     )
+#                     doc.append("car_repair_images", {
+#                         "image": file_doc.file_url,
+#                         "image_type": image_type
+#                     })
+
+#         if vehicle_pickup_required == "Yes" and not doc.car_repair_images:
+#             frappe.throw(_("At least one Car Repair Image is required when vehicle pickup is requested"))
+
+#         # ---------------------------
+#         # FINAL SAVE
+#         # ---------------------------
+#         doc.save(ignore_permissions=True)
+#         frappe.db.commit()
+#         frappe.clear_messages()
+
+#         return {
+#             "status": "success",
+#             "status_code": 201,
+#             "message": "Car Repair Request created successfully",
+#             "name": doc.name
+#         }
+
+#     except Exception as e:
+#         frappe.log_error("Create Car Repair Request Error", frappe.get_traceback())
+#         return {
+#             "status": "error",
+#             "message": str(e)
+#         }
+
+
+
+
+
+
+
+
+
+
+
 # =======================================================
 # Create Car Diagnosis From Car Repair Request
 # =======================================================
@@ -269,7 +479,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
             fields=[
                 "name", "car", "car_model", "license_plate", "chassis_no",
                 "email", "phone", "repair_request_date", "priority",
-                "vehicle_pick_up", "customer_signature"
+                "vehicle_pick_up", "customer_signature","assign_adviser"
             ],
             order_by="creation desc",
             limit_page_length=1
@@ -310,6 +520,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
         diagnosis.priority = req_doc.priority
         diagnosis.vehicle_pick_up = req_doc.vehicle_pick_up
         diagnosis.customer_signature = req_doc.customer_signature
+        diagnosis.assign_adviser =req_doc.assign_adviser
 
         # ✅ Auto-fill Reference No from Car Repair Request
         diagnosis.reference_no = req_doc.name
