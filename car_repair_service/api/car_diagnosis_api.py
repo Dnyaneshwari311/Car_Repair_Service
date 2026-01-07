@@ -31,7 +31,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
             fields=[
                 "name", "car", "car_model", "license_plate", "chassis_no",
                 "email", "phone", "repair_request_date", "priority",
-                "vehicle_pick_up", "customer_signature"
+                "vehicle_pick_up", "customer_signature","signature"
             ],
             order_by="creation desc",
             limit_page_length=1
@@ -59,6 +59,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
         diagnosis.vehicle_pick_up = req_doc.vehicle_pick_up
         diagnosis.customer_signature = req_doc.customer_signature
         diagnosis.reference_no = req_doc.name
+        diagnosis.signature = req_doc.signature
 
         # Copy child tables
         if hasattr(req_doc, "vehicle_concern"):
