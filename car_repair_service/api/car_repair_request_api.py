@@ -347,18 +347,18 @@ def create_car_repair_request(data):
         # ---------------------------
         # CUSTOMER SIGNATURE
         # ---------------------------
-        signature_upload = files.get("customer_signature")
-        if not signature_upload or not signature_upload.filename:
-            frappe.throw(_("Customer Signature is required"))
+        # signature_upload = files.get("customer_signature")
+        # if not signature_upload or not signature_upload.filename:
+        #     frappe.throw(_("Customer Signature is required"))
 
-        signature_file = save_file(
-            fname=signature_upload.filename,
-            content=signature_upload.stream.read(),
-            dt="Car Repair Request",
-            dn=doc.name,
-            is_private=0
-        )
-        doc.customer_signature = signature_file.file_url
+        # signature_file = save_file(
+        #     fname=signature_upload.filename,
+        #     content=signature_upload.stream.read(),
+        #     dt="Car Repair Request",
+        #     dn=doc.name,
+        #     is_private=0
+        # )
+        # doc.customer_signature = signature_file.file_url
 
         # ---------------------------
         # ODOMETER PHOTO
@@ -425,7 +425,7 @@ def create_car_repair_request(data):
             "name": doc.name,
 
             # THIS IS NOW BASE64 (NOT FILE PATH)
-            "customer_signature": signature_base64
+            # "customer_signature": signature_base64
         }
 
 
