@@ -181,6 +181,62 @@ def create_book_appointment(data):
 
 
 
+@frappe.whitelist(allow_guest=False)
+def confirm_book_appointment(appointment_name):
+    """
+    Confirm a Book Appointment
+    """
+
+    validate_api_access("Book Appointment")
+
+    try:
+        appointment = frappe.get_doc("Book Appointment", appointment_name)
+
+        # Prevent reconfirm
+        if appointment.status == "Confirmed":
+            return {
+                "status": "exists",
+                "message": "Appointment is already confirmed",
+                "appointment": appointment.name
+            }
+
+        # Optional: prevent confirming cancelled appointments
+        if appointment.status == "Cancelled":
+            frappe.throw("Cancelled appointment cannot be confirmed")
+
+        appointment.status = "Confirmed"
+        appointment.save(ignore_permissions=True)
+
+        frappe.clear_messages()
+
+        return {
+            "status": "success",
+            "status_code": 200,
+            "message": "Appointment confirmed successfully",
+            "appointment": appointment.name
+        }
+
+    except Exception as e:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Confirm Book Appointment Error"
+        )
+        frappe.throw(str(e))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -303,7 +359,7 @@ def create_car_repair_request(appointment_name, status=None):
         # ---------------------------
         # UPDATE APPOINTMENT STATUS TO COMPLETE
         # ---------------------------
-        appointment.status = "Complete"
+        # appointment.status = "Complete"
         appointment.save(ignore_permissions=True)
         frappe.clear_messages()
 
