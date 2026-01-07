@@ -573,7 +573,7 @@ def get_book_appointment(appointment_id):
             "vehicle_pickup_required": doc.vehicle_pickup_required,
             "pickup_address": doc.pickup_address, 
             "same_as_pick_up_address":doc.same_as_pick_up_address,
-            "drop_address":doc.drop,
+            "drop_address":doc.drop_address,
             "assigned_to":doc.assigned_to,
             "status": doc.status,
             "creation": doc.creation,
