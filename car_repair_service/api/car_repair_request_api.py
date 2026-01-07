@@ -308,7 +308,7 @@ def create_car_repair_request(data):
             "car", "license_plate", "chassis_no",
             "car_manufacturing_year", "priority",
             "service_type", "repair_request_date",
-            "driver_name", "driver_mob_no",
+            "driver_name", "driver_mob_no","assign_adviser",
             "odometer_value", "odometer_value_current",
             "fuel_level", "remark", "fuel_type",
             "vehicle_pickup_required", "pickup_address",
