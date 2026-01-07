@@ -11,6 +11,9 @@ from frappe.utils import getdate, get_time, now_datetime, nowdate
 
 @frappe.whitelist(allow_guest=False)
 def create_book_appointment(data):
+    validate_api_access("Book Appointment")
+
+    
     try:
         data = frappe.parse_json(data)
 
@@ -182,6 +185,7 @@ from frappe.utils import getdate, nowdate
 
 @frappe.whitelist(allow_guest=False)
 def create_car_repair_request(appointment_name, status=None):
+    validate_api_access("Book Appointment")
     """
     Create a Car Repair Request from a Book Appointment
     """
@@ -388,6 +392,8 @@ def create_car_repair_request(appointment_name, status=None):
 
 @frappe.whitelist(allow_guest=False)
 def get_book_appointments(page=1, page_size=10, status=None, search=None):
+    validate_api_access("Book Appointment")
+
     try:
         page = int(page)
         page_size = int(page_size)
@@ -485,6 +491,7 @@ def get_book_appointments(page=1, page_size=10, status=None, search=None):
 
 @frappe.whitelist(allow_guest=False)
 def get_book_appointment(appointment_id):
+    validate_api_access("Book Appointment")
    
     """
     Get a single Book Appointment by ID,
@@ -564,8 +571,9 @@ from frappe.utils import getdate, get_time
 
 @frappe.whitelist(allow_guest=False)
 def update_book_appointment(data):
-    import frappe
-    from frappe.utils import getdate, get_time
+    validate_api_access("Book Appointment")
+    # import frappe
+    # from frappe.utils import getdate, get_time
 
     try:
         # Parse JSON payload

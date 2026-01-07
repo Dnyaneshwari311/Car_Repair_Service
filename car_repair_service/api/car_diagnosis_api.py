@@ -1,6 +1,8 @@
 import frappe
 from frappe import _
 # from car_repair_service.api.utils import ensure_authenticated
+from car_repair_service.api.role_validation import validate_api_access
+
 
 
 # -----------------------------
@@ -8,6 +10,7 @@ from frappe import _
 # -----------------------------
 @frappe.whitelist(allow_guest=False)
 def create_car_diagnosis(customer_name=None, customer=None):
+    validate_api_access("Car Diagnosis")
     
     """
     Create a Car Diagnosis record:
@@ -97,6 +100,7 @@ from urllib.parse import urljoin
 
 @frappe.whitelist(allow_guest=False)
 def car_diagnosis_get(name):
+    validate_api_access("Car Diagnosis")
     
     """
     Get Car Diagnosis by name (primary key)
@@ -158,6 +162,7 @@ def car_diagnosis_get(name):
 # -----------------------------
 @frappe.whitelist(allow_guest=False)
 def update_car_diagnosis(name=None, data=None):
+    validate_api_access("Car Diagnosis")
    
     """
     Update an existing Car Diagnosis record.
@@ -378,6 +383,7 @@ from urllib.parse import urljoin
 
 @frappe.whitelist(allow_guest=False)
 def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", sort_order="desc", is_pagination=False, **kwargs):
+    validate_api_access("Car Diagnosis")
     
     try:
         is_pagination = frappe.utils.sbool(is_pagination)

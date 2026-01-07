@@ -369,6 +369,7 @@ def get_sales_invoice(name):
                 "customer": si.customer,
                 "customer_name": si.customer_name,
                 "company": si.company,
+                "posting_time":si.posting_time,
                 "posting_date": si.posting_date,
                 "due_date": si.due_date,
                 "status": si.status,

@@ -142,7 +142,7 @@
   "doctype_event": "After Save",
   "enable_rate_limit": 0,
   "event_frequency": "All",
-  "modified": "2025-12-11 12:51:05.522263",
+  "modified": "2026-01-02 16:05:40.334927",
   "module": null,
   "name": "Book Appointment create vehicle record",
   "rate_limit_count": 5,

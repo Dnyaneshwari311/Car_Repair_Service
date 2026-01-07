@@ -10,12 +10,12 @@ ROLE_DOCTYPE_MAP = {
         "Car repair"
     ],
     "Assign Adviser": [
-        "Book Appointment",
         "Car Repair Request",
         "Car Diagnosis",
         "Car repair"
     ],
     "Receptionist": [
+        "Book Appointment",
         "Car Repair Request",
         "Car Diagnosis",
         "Car repair"

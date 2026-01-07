@@ -1,13 +1,15 @@
 import frappe
 from frappe import _
 from frappe.utils.data import now
+from car_repair_service.api.role_validation import validate_api_access
+
 
 @frappe.whitelist(allow_guest=False)
 def create_car_repair(data):
     import json
     if isinstance(data, str):
         data = json.loads(data)
-
+    validate_api_access("Car repair")
     try:
         allowed_status = ["Pending", "In Progress", "Completed"]
 
@@ -174,6 +176,7 @@ def delete_car_repair(name):
 
 @frappe.whitelist(allow_guest=False)
 def update_car_repair():
+    validate_api_access("Car repair")
     data = frappe.form_dict.get("data")
 
     if not data:
@@ -457,6 +460,7 @@ def update_car_repair():
 
 @frappe.whitelist(allow_guest=False)
 def list_car_repairs(page=1, page_size=20, status=None, search=None, sort_by="creation", sort_order="desc"):
+    validate_api_access("Car repair")
     try:
         page = int(page)
         page_size = int(page_size)
@@ -576,6 +580,7 @@ def list_car_repairs(page=1, page_size=20, status=None, search=None, sort_by="cr
 
 @frappe.whitelist(allow_guest=False)
 def get_car_repair_by_id(name):
+    validate_api_access("Car repair")
     try:
         if not name:
             return {

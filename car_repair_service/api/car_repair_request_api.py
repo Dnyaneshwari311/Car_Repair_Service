@@ -4,6 +4,8 @@ import json
 from frappe.utils.file_manager import save_file
 from frappe.utils import get_url
 from car_repair_service.api.utils import get_paginated_data
+from car_repair_service.api.role_validation import validate_api_access
+
 
 # @frappe.whitelist(allow_guest=False)
 # def create_car_repair_request(data):
@@ -231,6 +233,8 @@ def file_url_to_base64(file_url):
 
 @frappe.whitelist(allow_guest=False)
 def create_car_repair_request(data):
+    validate_api_access("Car Repair Request")
+
     try:
         data = json.loads(data) if isinstance(data, str) else data
         files = frappe.request.files
@@ -443,6 +447,7 @@ def create_car_repair_request(data):
 
 @frappe.whitelist(allow_guest=False)
 def create_car_diagnosis(customer_name=None, customer=None):
+    validate_api_access("Car Diagnosis")
     
     """
     Create a Car Diagnosis record:
@@ -1079,6 +1084,7 @@ def get_car_repair_request(
 ):
     import frappe
     import math
+    validate_api_access("Car Repair Request")
 
     try:
         IMAGE_TYPE_KEY_MAP = {
@@ -1299,6 +1305,8 @@ def update_car_repair_request():
     - Returns child table images as '/files/<filename>' for all images
     - Avoids duplicates
     """
+    validate_api_access("Car Repair Request")
+
     try:
         # -------------------------
         # Get request data
