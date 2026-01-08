@@ -587,7 +587,7 @@ def create_or_update_car_repair(q):
         child_rows.append({
             "damage_description": desc,
             # "assigned_to": row.get("assigned_to") or "",
-            "assigned_to": row.get("assigned_to") or employee,
+            "assigned_to": assigned_to,
             "part_required": row.get("part_required") or "",
             "quantity": qty,
             "estimated_cost": rate,
