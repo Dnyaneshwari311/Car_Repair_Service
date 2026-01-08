@@ -676,13 +676,9 @@ def create_or_update_car_repair(q):
         # Replace damages
         repair.set("list_of_damage", [])
         for row in child_rows:
+            row["assigned_to"] = None   # 🔴 force null
             repair.append("list_of_damage", row)
             
-            
-        for row in child_rows:
-            row["assigned_to"] = None   # 🔴 force null
-            repair.append("list_of_damage", row)    
-
         # Replace concerns
         repair.set("vehicle_concern", [])
         for row in concern_rows:
