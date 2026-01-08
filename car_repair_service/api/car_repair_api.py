@@ -649,3 +649,98 @@ def get_car_repair_by_id(name):
             "status": "error",
             "message": str(e)
         }
+
+
+
+
+
+
+
+
+@frappe.whitelist(allow_guest=False)
+def update_car_repair_status_completed():
+    
+    validate_api_access("Car repair")
+    """
+    POST API to update or create Car Repair Damage rows in list_of_damage.
+    Automatically updates Car Repair status if all damages completed.
+
+    Expected JSON:
+    {
+        "car_repair": "h01lpka6eo",
+        "data": [
+            {
+                "damage_name": "s9rn9uo8pc",
+                "assigned_to": "HR-EMP-00004",
+                "status": "Completed"
+            }
+        ]
+    }
+    """
+
+    # Get raw JSON from request
+    data = frappe.local.form_dict
+    if not data:
+        return {"status": "error", "message": "Missing data"}
+
+    # If POSTed as string, parse it
+    if "data" in data and isinstance(data["data"], str):
+        data["data"] = json.loads(data["data"])
+
+    car_repair_name = data.get("car_repair")
+    updates = data.get("data", [])
+
+    if not car_repair_name:
+        return {"status": "error", "message": "Missing car_repair"}
+
+    # Fetch Car Repair doc
+    try:
+        doc = frappe.get_doc("Car repair", car_repair_name)
+    except frappe.DoesNotExistError:
+        return {"status": "error", "message": _("Car Repair not found")}
+
+    # Keep track of updated/created rows
+    updated_rows = []
+
+    for upd in updates:
+        damage_name = upd.get("damage_name")
+        if not damage_name:
+            continue
+
+        # Find row by child table name
+        row = next((r for r in doc.list_of_damage if r.name == damage_name), None)
+
+        if row:
+            # Update existing row
+            if "assigned_to" in upd:
+                row.assigned_to = upd["assigned_to"]
+                # Auto-mark Completed if assigned
+                if not row.status:
+                    row.status = "Completed"
+            if "status" in upd:
+                row.status = upd["status"]
+        else:
+            # Create new child row
+            doc.append("list_of_damage", {
+                "name": damage_name,  # Optional: can let ERPNext auto-generate
+                "damage_description": upd.get("damage_description", ""),
+                "assigned_to": upd.get("assigned_to"),
+                "status": upd.get("status", "In Progress")
+            })
+
+        updated_rows.append(damage_name)
+
+    # Update main Car Repair status like client script
+    rows = doc.list_of_damage or []
+    all_completed = len(rows) > 0 and all((r.status or "").lower() == "completed" for r in rows)
+    doc.status = "Completed" if all_completed else "In Progress"
+
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "status": "success",
+        "car_repair": car_repair_name,
+        "updated_rows": updated_rows,
+        "current_status": doc.status
+    }
