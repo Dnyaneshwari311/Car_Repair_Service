@@ -590,7 +590,7 @@ def create_or_update_car_repair(q):
         child_rows.append({
             "damage_description": desc,
             "assigned_to": row.get("assigned_to") or "",
-           "part_required": row.get("part_required") or "",
+            "part_required": row.get("part_required") or "",
             "quantity": qty,
             "estimated_cost": rate,
             "amount": qty * rate
@@ -676,9 +676,8 @@ def create_or_update_car_repair(q):
         # Replace damages
         repair.set("list_of_damage", [])
         for row in child_rows:
-            row["assigned_to"] = None   # 🔴 force null
             repair.append("list_of_damage", row)
-            
+
         # Replace concerns
         repair.set("vehicle_concern", [])
         for row in concern_rows:
@@ -724,6 +723,10 @@ def create_or_update_car_repair(q):
 
     for row in concern_rows:
         repair.append("vehicle_concern", row)
+
+    repair.save(ignore_permissions=True)
+    for d in repair.list_of_damage:
+      d.assigned_to = None
 
     repair.db_update()
     frappe.db.commit()
