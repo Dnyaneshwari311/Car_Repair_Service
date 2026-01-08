@@ -665,7 +665,7 @@ def create_or_update_car_repair(q):
         repair.vehicle_pick_up = vehicle_pick_up
         repair.assign_adviser = employee
         repair.estimated_total = estimated_total
-
+        repair.assigned_to = employee
         # ✅ Copy signature only if Car Repair doesn't already have one
         if not repair.signature and diagnosis_signature:
             repair.signature = diagnosis_signature
@@ -706,6 +706,7 @@ def create_or_update_car_repair(q):
         "vehicle_pick_up": vehicle_pick_up,
         "signature": diagnosis_signature,  # ✅ Attach copied
         "assign_adviser": employee,
+        "assigned_to": employee,
         "estimated_total": estimated_total,
         "list_of_damage": [],
         "vehicle_concern": []
