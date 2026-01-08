@@ -689,6 +689,11 @@ def create_or_update_car_repair(q):
         repair.set("vehicle_concern", [])
         for row in concern_rows:
             repair.append("vehicle_concern", row)
+            
+        for row in repair.list_of_damage:
+            if not row.assigned_to:
+              row.assigned_to = None
+
 
         repair.save(ignore_permissions=True)
         frappe.db.commit()
@@ -728,6 +733,11 @@ def create_or_update_car_repair(q):
 
     for row in concern_rows:
         repair.append("vehicle_concern", row)
+        
+    for row in repair.list_of_damage:
+      if not row.assigned_to:
+        row.assigned_to = None
+
 
     repair.save(ignore_permissions=True)
     frappe.db.commit()
