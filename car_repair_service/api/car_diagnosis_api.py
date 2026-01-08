@@ -161,36 +161,123 @@ def car_diagnosis_get(name):
 # -----------------------------
 # UPDATE CAR DIAGNOSIS
 # -----------------------------
+# @frappe.whitelist(allow_guest=False)
+# def update_car_diagnosis(name=None, data=None):
+#     validate_api_access("Car Diagnosis")
+   
+#     """
+#     Update an existing Car Diagnosis record.
+#     - Updates main fields and Car Diagnosis Detail child table.
+#     - Supports partial updates.
+    
+#     Example JSON:
+#     {
+#         "name": "CAR-DIAG-0001",
+#         "priority": "High",
+#         "remarks": "Updated after inspection",
+#         "car_diagnosis_detail": [
+#             {
+#                 "damage_description": "Front bumper scratch",
+#                 "part_required": "Front bumper",
+#                 "quantity": 1,
+#                 "estimated_cost": 3500
+#             },
+#             {
+#                 "damage_description": "Broken headlight",
+#                 "part_required": "Headlight assembly",
+#                 "quantity": 1,
+#                 "estimated_cost": 5200
+#             }
+#         ]
+#     }
+#     """
+#     import json
+
+#     try:
+#         # ✅ Parse data safely
+#         if not data:
+#             if frappe.request and frappe.request.data:
+#                 try:
+#                     data = json.loads(frappe.request.data)
+#                 except Exception:
+#                     data = frappe.form_dict
+#             else:
+#                 data = frappe.form_dict
+
+#         if isinstance(data, str):
+#             try:
+#                 data = json.loads(data)
+#             except Exception:
+#                 data = {}
+
+#         # ✅ Allow name to come from body if not provided in URL
+#         if not name:
+#             name = data.get("name")
+
+#         if not name:
+#             return {"status": "error", "message": "Car Diagnosis name is required"}
+
+#         # ✅ Ensure record exists
+#         if not frappe.db.exists("Car Diagnosis", name):
+#             return {"status": "error", "message": f"Car Diagnosis '{name}' not found"}
+
+#         doc = frappe.get_doc("Car Diagnosis", name)
+
+#         # ✅ Allowed updatable fields
+#         updatable_fields = [
+#             "customer_name", "car", "model", "license_plate",
+#             "chassis_no", "phone", "email", "priority", "reference_no",
+#             "diagnosis_date", "remark","customer_signature",
+#             "estimated_delivery_date", "estimated_delivery_time"
+#         ]
+
+#         # ✅ Update only provided fields
+#         for f in updatable_fields:
+#             if f in data:
+#                 doc.set(f, data[f])
+
+#         # ✅ Update Car Diagnosis Detail child table
+#         if "car_diagnosis_detail" in data and isinstance(data["car_diagnosis_detail"], list):
+#             doc.set("car_diagnosis_detail", [])  # Clear existing rows
+#             for d in data["car_diagnosis_detail"]:
+#                 if d.get("damage_description") or d.get("part_required"):
+#                     doc.append("car_diagnosis_detail", {
+#                         "damage_description": d.get("damage_description"),
+#                         "part_required": d.get("part_required"),
+#                         "quantity": d.get("quantity"),
+#                         "estimated_cost": d.get("estimated_cost")
+#                     })
+
+#         # ✅ Save document
+#         doc.save(ignore_permissions=True)
+#         frappe.db.commit()
+        
+#         frappe.clear_messages()
+#         return {
+#             "status": "success",
+#             "status_code": 200,
+#             "message": f"Car Diagnosis '{name}' updated successfully",
+#             "car_diagnosis_id": doc.name
+#         }
+
+#     except Exception as e:
+#         frappe.log_error(frappe.get_traceback(), "Update Car Diagnosis Error")
+#         return {"status": "error", "message": str(e)}
+
+
+
+
+
 @frappe.whitelist(allow_guest=False)
 def update_car_diagnosis(name=None, data=None):
     validate_api_access("Car Diagnosis")
-   
+
     """
     Update an existing Car Diagnosis record.
     - Updates main fields and Car Diagnosis Detail child table.
     - Supports partial updates.
-    
-    Example JSON:
-    {
-        "name": "CAR-DIAG-0001",
-        "priority": "High",
-        "remarks": "Updated after inspection",
-        "car_diagnosis_detail": [
-            {
-                "damage_description": "Front bumper scratch",
-                "part_required": "Front bumper",
-                "quantity": 1,
-                "estimated_cost": 3500
-            },
-            {
-                "damage_description": "Broken headlight",
-                "part_required": "Headlight assembly",
-                "quantity": 1,
-                "estimated_cost": 5200
-            }
-        ]
-    }
     """
+
     import json
 
     try:
@@ -210,7 +297,7 @@ def update_car_diagnosis(name=None, data=None):
             except Exception:
                 data = {}
 
-        # ✅ Allow name to come from body if not provided in URL
+        # ✅ Allow name to come from body if not provided
         if not name:
             name = data.get("name")
 
@@ -227,7 +314,7 @@ def update_car_diagnosis(name=None, data=None):
         updatable_fields = [
             "customer_name", "car", "model", "license_plate",
             "chassis_no", "phone", "email", "priority", "reference_no",
-            "diagnosis_date", "remark","customer_signature",
+            "diagnosis_date", "remark", "customer_signature",
             "estimated_delivery_date", "estimated_delivery_time"
         ]
 
@@ -239,19 +326,28 @@ def update_car_diagnosis(name=None, data=None):
         # ✅ Update Car Diagnosis Detail child table
         if "car_diagnosis_detail" in data and isinstance(data["car_diagnosis_detail"], list):
             doc.set("car_diagnosis_detail", [])  # Clear existing rows
+
             for d in data["car_diagnosis_detail"]:
                 if d.get("damage_description") or d.get("part_required"):
+                    qty = d.get("quantity") or 0
+                    cost = d.get("estimated_cost") or 0
+
+                    amount = d.get("amount")
+                    if amount is None:
+                        amount = qty * cost  # ✅ Auto-calculate amount
+
                     doc.append("car_diagnosis_detail", {
                         "damage_description": d.get("damage_description"),
                         "part_required": d.get("part_required"),
-                        "quantity": d.get("quantity"),
-                        "estimated_cost": d.get("estimated_cost")
+                        "quantity": qty,
+                        "estimated_cost": cost,
+                        "amount": amount
                     })
 
         # ✅ Save document
         doc.save(ignore_permissions=True)
         frappe.db.commit()
-        
+
         frappe.clear_messages()
         return {
             "status": "success",
@@ -263,6 +359,11 @@ def update_car_diagnosis(name=None, data=None):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Update Car Diagnosis Error")
         return {"status": "error", "message": str(e)}
+
+
+
+
+
 
 
 
