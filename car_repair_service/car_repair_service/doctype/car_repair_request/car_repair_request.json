@@ -111,8 +111,7 @@
    "fieldname": "car_repair_images",
    "fieldtype": "Table",
    "label": "Car Repair Images",
-   "options": "Car Repair Images",
-   "reqd": 1
+   "options": "Car Repair Images"
   },
   {
    "fetch_from": "car.license_plate",
@@ -155,6 +154,7 @@
   {
    "fieldname": "customer_signature",
    "fieldtype": "Signature",
+   "hidden": 1,
    "in_list_view": 1,
    "label": "Customer Signature"
   },
@@ -272,7 +272,7 @@
    "link_fieldname": "customer_name"
   }
  ],
- "modified": "2026-01-06 18:43:11.138561",
+ "modified": "2026-01-08 09:47:53.644323",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Repair Request",

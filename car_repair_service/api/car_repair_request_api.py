@@ -1,27 +1,263 @@
+# import frappe
+# from frappe import _
+# import json
+# from frappe.utils.file_manager import save_file
+# from frappe.utils import get_url
+# from car_repair_service.api.utils import get_paginated_data
+# from car_repair_service.api.role_validation import validate_api_access
+
+
+
+# import base64
+# import os
+# import mimetypes
+
+
+# from frappe.utils.file_manager import get_file
+
+# def file_url_to_base64(file_url):
+#     if not file_url:
+#         return None
+
+#     # Get the File document
+#     file_doc = frappe.get_doc("File", {"file_url": file_url})
+#     content = file_doc.get_content()  # Returns bytes
+
+#     mime_type, _ = mimetypes.guess_type(file_doc.file_name)
+#     mime_type = mime_type or "image/png"
+
+#     encoded = base64.b64encode(content).decode()
+#     return f"data:{mime_type};base64,{encoded}"
+
+
+# @frappe.whitelist(allow_guest=False)
+# def create_car_repair_request(data):
+#     validate_api_access("Car Repair Request")
+
+#     try:
+#         data = json.loads(data) if isinstance(data, str) else data
+#         files = frappe.request.files
+
+#         # ---------------------------
+#         # BASIC DATA
+#         # ---------------------------
+#         customer_name = data.get("customer_name")
+#         email = data.get("email")
+#         phone = data.get("phone")
+#         car = data.get("car")
+#         license_plate = data.get("license_plate")
+
+#         if not customer_name or not email:
+#             frappe.throw(_("Missing customer_name or email"))
+
+#         # ---------------------------
+#         # DUPLICATE CHECK
+#         # ---------------------------
+#         existing_crr = frappe.get_all(
+#             "Car Repair Request",
+#             filters={
+#                 "customer_name": customer_name,
+#                 "car": car,
+#                 "license_plate": license_plate
+#             },
+#             limit=1
+#         )
+#         if existing_crr:
+#             return {
+#                 "status": "exists",
+#                 "status_code": 200,
+#                 "message": f"Car Repair Request already exists: {existing_crr[0].name}",
+#                 "name": existing_crr[0].name
+#             }
+
+#         # ---------------------------
+#         # CUSTOMER CREATE / FETCH
+#         # ---------------------------
+#         customer_name_db = frappe.db.exists("Customer", {"email_id": email})
+#         if customer_name_db:
+#             customer_doc = frappe.get_doc("Customer", customer_name_db)
+#         else:
+#             customer_doc = frappe.new_doc("Customer")
+#             customer_doc.customer_name = customer_name
+#             customer_doc.email_id = email
+#             customer_doc.mobile_no = phone
+#             customer_doc.customer_group = "Individual"
+#             customer_doc.territory = "All Territories"
+#             customer_doc.insert(ignore_permissions=True)
+
+#         # ---------------------------
+#         # VEHICLE MAKE / MODEL
+#         # ---------------------------
+#         make = data.get("make")
+#         model = data.get("model")
+
+#         if make and not frappe.db.exists("Vehicle Make", {"make": make}):
+#             frappe.get_doc({"doctype": "Vehicle Make", "make": make}).insert(ignore_permissions=True)
+
+#         if model and not frappe.db.exists("Vehicle Model", {"model": model}):
+#             frappe.get_doc({"doctype": "Vehicle Model", "model": model}).insert(ignore_permissions=True)
+
+#         # ---------------------------
+#         # CREATE CAR REPAIR REQUEST
+#         # ---------------------------
+#         doc = frappe.new_doc("Car Repair Request")
+
+#         fields = [
+#             "email", "phone", "make", "model", "assign_adviser",
+#             "car", "license_plate", "chassis_no",
+#             "car_manufacturing_year", "priority",
+#             "service_type", "repair_request_date",
+#             "driver_name", "driver_mob_no",
+#             "odometer_value", "odometer_value_current",
+#             "fuel_level", "remark", "fuel_type","assigned_to",
+#             "vehicle_pickup_required", "pickup_address",
+#             "same_as_pick_up_address", "drop_address"
+#         ]
+
+#         for f in fields:
+#             if f in data:
+#                 doc.set(f, data[f])
+
+#         doc.customer = customer_doc.name
+#         doc.customer_name = customer_doc.customer_name
+
+#         doc.insert(ignore_permissions=True, ignore_mandatory=True)
+         
+#          # ---------------------------
+#         # SIGNATURE FILE
+#         # ---------------------------
+#         # ---------------------------
+#         # SIGNATURE IMAGE
+#         # ---------------------------
+#         signature_upload = files.get("signature")
+#         if not signature_upload or not signature_upload.filename:
+#             frappe.throw(_("Signature image is required"))
+
+#         signature_file = save_file(
+#             fname=signature_upload.filename,
+#             content=signature_upload.stream.read(),
+#             dt="Car Repair Request",
+#             dn=doc.name,
+#             is_private=0
+#         )
+#         doc.signature = signature_file.file_url
+
+                
+#         # ---------------------------
+#         # CUSTOMER SIGNATURE
+#         # ---------------------------
+#         # signature_upload = files.get("customer_signature")
+#         # if not signature_upload or not signature_upload.filename:
+#         #     frappe.throw(_("Customer Signature is required"))
+
+#         # signature_file = save_file(
+#         #     fname=signature_upload.filename,
+#         #     content=signature_upload.stream.read(),
+#         #     dt="Car Repair Request",
+#         #     dn=doc.name,
+#         #     is_private=0
+#         # )
+#         # doc.customer_signature = signature_file.file_url
+
+#         # ---------------------------
+#         # ODOMETER PHOTO
+#         # ---------------------------
+#         odometer_upload = files.get("odometer_photo")
+#         if not odometer_upload or not odometer_upload.filename:
+#             frappe.throw(_("Odometer Photo is required"))
+
+#         odometer_file = save_file(
+#             fname=odometer_upload.filename,
+#             content=odometer_upload.stream.read(),
+#             dt="Car Repair Request",
+#             dn=doc.name,
+#             is_private=0
+#         )
+#         doc.odometer_photo = odometer_file.file_url
+
+#         # ---------------------------
+#         # VEHICLE CONCERNS
+#         # ---------------------------
+#         for vc in data.get("vehicle_concern", []):
+#             doc.append("vehicle_concern", {
+#                 "vehicle_concern": vc.get("vehicle_concern")
+#             })
+
+#         # ---------------------------
+#         # CAR REPAIR IMAGES
+#         # ---------------------------
+#         IMAGE_FIELD_MAP = {
+#             "front_view": "Front View",
+#             "back_view": "Back View",
+#             "left_view": "Left View",
+#             "right_view": "Right View",
+#         }
+
+#         for field, image_type in IMAGE_FIELD_MAP.items():
+#             for upload in files.getlist(field):
+#                 if upload and upload.filename:
+#                     file_doc = save_file(
+#                         fname=upload.filename,
+                        
+#                         content=upload.stream.read(),
+#                         dt="Car Repair Request",
+#                         dn=doc.name,
+#                         is_private=0
+#                     )
+#                     doc.append("car_repair_images", {
+#                         "image": file_doc.file_url,
+#                         "image_type": image_type
+#                     })
+
+#         if not doc.car_repair_images:
+#             frappe.throw(_("At least one Car Repair Image is required"))
+
+#         doc.save(ignore_permissions=True)
+#         frappe.db.commit()
+#         frappe.clear_messages()
+#         signature_base64 = file_url_to_base64(doc.customer_signature)
+
+#         return {
+#             "status": "success",
+#             "status_code": 201,
+#             "message": "Car Repair Request created successfully",
+#             "name": doc.name,
+
+#             # THIS IS NOW BASE64 (NOT FILE PATH)
+#             # "customer_signature": signature_base64
+#         }
+
+
+#     except Exception as e:
+#         frappe.log_error("Create Car Repair Request Error", frappe.get_traceback())
+#         return {"status": "error", "message": str(e)}
+
+
+
+
+
+
+
+
 import frappe
 from frappe import _
 import json
+import base64
+import mimetypes
+
 from frappe.utils.file_manager import save_file
-from frappe.utils import get_url
-from car_repair_service.api.utils import get_paginated_data
 from car_repair_service.api.role_validation import validate_api_access
 
 
-
-import base64
-import os
-import mimetypes
-
-
-from frappe.utils.file_manager import get_file
-
+# --------------------------------------------------
+# FILE → BASE64
+# --------------------------------------------------
 def file_url_to_base64(file_url):
     if not file_url:
         return None
 
-    # Get the File document
     file_doc = frappe.get_doc("File", {"file_url": file_url})
-    content = file_doc.get_content()  # Returns bytes
+    content = file_doc.get_content()
 
     mime_type, _ = mimetypes.guess_type(file_doc.file_name)
     mime_type = mime_type or "image/png"
@@ -30,6 +266,9 @@ def file_url_to_base64(file_url):
     return f"data:{mime_type};base64,{encoded}"
 
 
+# --------------------------------------------------
+# CREATE CAR REPAIR REQUEST
+# --------------------------------------------------
 @frappe.whitelist(allow_guest=False)
 def create_car_repair_request(data):
     validate_api_access("Car Repair Request")
@@ -48,12 +287,18 @@ def create_car_repair_request(data):
         license_plate = data.get("license_plate")
 
         if not customer_name or not email:
-            frappe.throw(_("Missing customer_name or email"))
+            frappe.throw(_("Missing customer name or email"))
+
+        # ---------------------------
+        # PICKUP LOGIC
+        # ---------------------------
+        vehicle_pickup_required = data.get("vehicle_pickup_required")
+        is_pickup = vehicle_pickup_required == "Yes, Pickup my vehicle"
 
         # ---------------------------
         # DUPLICATE CHECK
         # ---------------------------
-        existing_crr = frappe.get_all(
+        existing = frappe.get_all(
             "Car Repair Request",
             filters={
                 "customer_name": customer_name,
@@ -62,18 +307,20 @@ def create_car_repair_request(data):
             },
             limit=1
         )
-        if existing_crr:
+
+        if existing:
             return {
                 "status": "exists",
                 "status_code": 200,
-                "message": f"Car Repair Request already exists: {existing_crr[0].name}",
-                "name": existing_crr[0].name
+                "message": f"Car Repair Request already exists: {existing[0].name}",
+                "name": existing[0].name
             }
 
         # ---------------------------
-        # CUSTOMER CREATE / FETCH
+        # CUSTOMER
         # ---------------------------
         customer_name_db = frappe.db.exists("Customer", {"email_id": email})
+
         if customer_name_db:
             customer_doc = frappe.get_doc("Customer", customer_name_db)
         else:
@@ -98,7 +345,7 @@ def create_car_repair_request(data):
             frappe.get_doc({"doctype": "Vehicle Model", "model": model}).insert(ignore_permissions=True)
 
         # ---------------------------
-        # CREATE CAR REPAIR REQUEST
+        # CREATE DOCUMENT
         # ---------------------------
         doc = frappe.new_doc("Car Repair Request")
 
@@ -109,9 +356,10 @@ def create_car_repair_request(data):
             "service_type", "repair_request_date",
             "driver_name", "driver_mob_no",
             "odometer_value", "odometer_value_current",
-            "fuel_level", "remark", "fuel_type","assigned_to",
-            "vehicle_pickup_required", "pickup_address",
-            "same_as_pick_up_address", "drop_address"
+            "fuel_level", "remark", "fuel_type",
+            "assigned_to", "vehicle_pickup_required",
+            "pickup_address", "same_as_pick_up_address",
+            "drop_address"
         ]
 
         for f in fields:
@@ -122,49 +370,34 @@ def create_car_repair_request(data):
         doc.customer_name = customer_doc.customer_name
 
         doc.insert(ignore_permissions=True, ignore_mandatory=True)
-         
-         # ---------------------------
-        # SIGNATURE FILE
+
         # ---------------------------
-        # ---------------------------
-        # SIGNATURE IMAGE
+        # SIGNATURE (ONLY IF PICKUP)
         # ---------------------------
         signature_upload = files.get("signature")
-        if not signature_upload or not signature_upload.filename:
-            frappe.throw(_("Signature image is required"))
 
-        signature_file = save_file(
-            fname=signature_upload.filename,
-            content=signature_upload.stream.read(),
-            dt="Car Repair Request",
-            dn=doc.name,
-            is_private=0
-        )
-        doc.signature = signature_file.file_url
+        if is_pickup:
+            if not signature_upload or not signature_upload.filename:
+                frappe.throw(_("Signature is required when vehicle pickup is selected"))
 
-                
-        # ---------------------------
-        # CUSTOMER SIGNATURE
-        # ---------------------------
-        # signature_upload = files.get("customer_signature")
-        # if not signature_upload or not signature_upload.filename:
-        #     frappe.throw(_("Customer Signature is required"))
-
-        # signature_file = save_file(
-        #     fname=signature_upload.filename,
-        #     content=signature_upload.stream.read(),
-        #     dt="Car Repair Request",
-        #     dn=doc.name,
-        #     is_private=0
-        # )
-        # doc.customer_signature = signature_file.file_url
+            signature_file = save_file(
+                fname=signature_upload.filename,
+                content=signature_upload.stream.read(),
+                dt="Car Repair Request",
+                dn=doc.name,
+                is_private=0
+            )
+            doc.signature = signature_file.file_url
+        else:
+            doc.signature = None
 
         # ---------------------------
-        # ODOMETER PHOTO
+        # ODOMETER PHOTO (ALWAYS REQUIRED)
         # ---------------------------
         odometer_upload = files.get("odometer_photo")
+
         if not odometer_upload or not odometer_upload.filename:
-            frappe.throw(_("Odometer Photo is required"))
+            frappe.throw(_("Odometer photo is required"))
 
         odometer_file = save_file(
             fname=odometer_upload.filename,
@@ -184,13 +417,13 @@ def create_car_repair_request(data):
             })
 
         # ---------------------------
-        # CAR REPAIR IMAGES
+        # CAR REPAIR IMAGES (ONLY IF PICKUP)
         # ---------------------------
         IMAGE_FIELD_MAP = {
             "front_view": "Front View",
             "back_view": "Back View",
             "left_view": "Left View",
-            "right_view": "Right View",
+            "right_view": "Right View"
         }
 
         for field, image_type in IMAGE_FIELD_MAP.items():
@@ -198,7 +431,6 @@ def create_car_repair_request(data):
                 if upload and upload.filename:
                     file_doc = save_file(
                         fname=upload.filename,
-                        
                         content=upload.stream.read(),
                         dt="Car Repair Request",
                         dn=doc.name,
@@ -209,238 +441,30 @@ def create_car_repair_request(data):
                         "image_type": image_type
                     })
 
-        if not doc.car_repair_images:
-            frappe.throw(_("At least one Car Repair Image is required"))
+        if is_pickup and not doc.car_repair_images:
+            frappe.throw(_("At least one Car Repair Image is required when vehicle pickup is selected"))
 
+        # ---------------------------
+        # SAVE
+        # ---------------------------
         doc.save(ignore_permissions=True)
         frappe.db.commit()
         frappe.clear_messages()
-        signature_base64 = file_url_to_base64(doc.customer_signature)
 
         return {
             "status": "success",
             "status_code": 201,
             "message": "Car Repair Request created successfully",
-            "name": doc.name,
-
-            # THIS IS NOW BASE64 (NOT FILE PATH)
-            # "customer_signature": signature_base64
+            "name": doc.name
         }
-
 
     except Exception as e:
         frappe.log_error("Create Car Repair Request Error", frappe.get_traceback())
-        return {"status": "error", "message": str(e)}
-
-
-
-
-
-
-
-
-# import frappe
-# from frappe import _
-# import json
-# from frappe.utils.file_manager import save_file
-# from car_repair_service.api.role_validation import validate_api_access
-
-
-# @frappe.whitelist(allow_guest=False)
-# def create_car_repair_request(data):
-#     validate_api_access("Car Repair Request")
-
-#     try:
-#         data = json.loads(data) if isinstance(data, str) else data
-#         files = frappe.request.files
-
-#         # ---------------------------
-#         # BASIC DATA
-#         # ---------------------------
-#         customer_name = data.get("customer_name")
-#         email = data.get("email")
-#         phone = data.get("phone")
-#         car = data.get("car")
-#         license_plate = data.get("license_plate")
-#         vehicle_pickup_required = data.get("vehicle_pickup_required")
-
-#         if not customer_name or not email:
-#             frappe.throw(_("Missing customer_name or email"))
-
-#         # ---------------------------
-#         # DUPLICATE CHECK
-#         # ---------------------------
-#         existing_crr = frappe.get_all(
-#             "Car Repair Request",
-#             filters={
-#                 "customer_name": customer_name,
-#                 "car": car,
-#                 "license_plate": license_plate
-#             },
-#             limit=1
-#         )
-
-#         if existing_crr:
-#             return {
-#                 "status": "exists",
-#                 "status_code": 200,
-#                 "message": f"Car Repair Request already exists: {existing_crr[0].name}",
-#                 "name": existing_crr[0].name
-#             }
-
-#         # ---------------------------
-#         # CUSTOMER CREATE / FETCH
-#         # ---------------------------
-#         customer_name_db = frappe.db.exists("Customer", {"email_id": email})
-
-#         if customer_name_db:
-#             customer_doc = frappe.get_doc("Customer", customer_name_db)
-#         else:
-#             customer_doc = frappe.new_doc("Customer")
-#             customer_doc.customer_name = customer_name
-#             customer_doc.email_id = email
-#             customer_doc.mobile_no = phone
-#             customer_doc.customer_group = "Individual"
-#             customer_doc.territory = "All Territories"
-#             customer_doc.insert(ignore_permissions=True)
-
-#         # ---------------------------
-#         # VEHICLE MAKE / MODEL
-#         # ---------------------------
-#         make = data.get("make")
-#         model = data.get("model")
-
-#         if make and not frappe.db.exists("Vehicle Make", {"make": make}):
-#             frappe.get_doc({
-#                 "doctype": "Vehicle Make",
-#                 "make": make
-#             }).insert(ignore_permissions=True)
-
-#         if model and not frappe.db.exists("Vehicle Model", {"model": model}):
-#             frappe.get_doc({
-#                 "doctype": "Vehicle Model",
-#                 "model": model
-#             }).insert(ignore_permissions=True)
-
-#         # ---------------------------
-#         # CREATE CAR REPAIR REQUEST
-#         # ---------------------------
-#         doc = frappe.new_doc("Car Repair Request")
-
-#         fields = [
-#             "email", "phone", "make", "model", "assign_adviser",
-#             "car", "license_plate", "chassis_no",
-#             "car_manufacturing_year", "priority",
-#             "service_type", "repair_request_date",
-#             "driver_name", "driver_mob_no",
-#             "odometer_value", "odometer_value_current",
-#             "fuel_level", "remark", "fuel_type","assigned_to"
-#             "vehicle_pickup_required", "pickup_address",
-#             "same_as_pick_up_address", "drop_address"
-#         ]
-
-#         for f in fields:
-#             if f in data:
-#                 doc.set(f, data[f])
-
-#         doc.customer = customer_doc.name
-#         doc.customer_name = customer_doc.customer_name
-
-#         doc.insert(ignore_permissions=True, ignore_mandatory=True)
-
-#         # ---------------------------
-#         # SIGNATURE IMAGE (CONDITIONAL)
-#         # ---------------------------
-#         signature_upload = files.get("signature")
-
-#         if vehicle_pickup_required == "Yes":
-#             if not signature_upload or not signature_upload.filename:
-#                 frappe.throw(_("Signature image is required when vehicle pickup is requested"))
-
-#             signature_file = save_file(
-#                 fname=signature_upload.filename,
-#                 content=signature_upload.stream.read(),
-#                 dt="Car Repair Request",
-#                 dn=doc.name,
-#                 is_private=0
-#             )
-#             doc.signature = signature_file.file_url
-
-#         # ---------------------------
-#         # ODOMETER PHOTO (ALWAYS REQUIRED)
-#         # ---------------------------
-#         odometer_upload = files.get("odometer_photo")
-#         if not odometer_upload or not odometer_upload.filename:
-#             frappe.throw(_("Odometer Photo is required"))
-
-#         odometer_file = save_file(
-#             fname=odometer_upload.filename,
-#             content=odometer_upload.stream.read(),
-#             dt="Car Repair Request",
-#             dn=doc.name,
-#             is_private=0
-#         )
-#         doc.odometer_photo = odometer_file.file_url
-
-#         # ---------------------------
-#         # VEHICLE CONCERNS
-#         # ---------------------------
-#         for vc in data.get("vehicle_concern", []):
-#             doc.append("vehicle_concern", {
-#                 "vehicle_concern": vc.get("vehicle_concern")
-#             })
-
-#         # ---------------------------
-#         # CAR REPAIR IMAGES (CONDITIONAL)
-#         # ---------------------------
-#         IMAGE_FIELD_MAP = {
-#             "front_view": "Front View",
-#             "back_view": "Back View",
-#             "left_view": "Left View",
-#             "right_view": "Right View",
-#         }
-
-#         for field, image_type in IMAGE_FIELD_MAP.items():
-#             for upload in files.getlist(field):
-#                 if upload and upload.filename:
-#                     file_doc = save_file(
-#                         fname=upload.filename,
-#                         content=upload.stream.read(),
-#                         dt="Car Repair Request",
-#                         dn=doc.name,
-#                         is_private=0
-#                     )
-#                     doc.append("car_repair_images", {
-#                         "image": file_doc.file_url,
-#                         "image_type": image_type
-#                     })
-
-#         if vehicle_pickup_required == "Yes" and not doc.car_repair_images:
-#             frappe.throw(_("At least one Car Repair Image is required when vehicle pickup is requested"))
-
-#         # ---------------------------
-#         # FINAL SAVE
-#         # ---------------------------
-#         doc.save(ignore_permissions=True)
-#         frappe.db.commit()
-#         frappe.clear_messages()
-
-#         return {
-#             "status": "success",
-#             "status_code": 201,
-#             "message": "Car Repair Request created successfully",
-#             "name": doc.name
-#         }
-
-#     except Exception as e:
-#         frappe.log_error("Create Car Repair Request Error", frappe.get_traceback())
-#         return {
-#             "status": "error",
-#             "message": str(e)
-#         }
-
-
-
+        return {
+            "status": "error",
+            "status_code": 500,
+            "message": str(e)
+        }
 
 
 
