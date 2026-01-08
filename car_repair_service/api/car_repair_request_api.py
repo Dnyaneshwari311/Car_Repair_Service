@@ -703,13 +703,175 @@ def create_car_diagnosis(customer_name=None, customer=None):
 
 
 
+# @frappe.whitelist(allow_guest=False)
+# def create_quotation_from_car_diagnosis(diagnosis_name):
+#     """
+#     API: Create a Quotation from a Car Diagnosis record.
+#     - Reuses Item if item_code OR item_name exists
+#     - Creates Item only when truly missing
+#     - Prevents duplicate Item Name error
+#     """
+
+#     try:
+#         # ==============================
+#         # Fetch Diagnosis
+#         # ==============================
+#         diag = frappe.get_doc("Car Diagnosis", diagnosis_name)
+
+#         if not diag.customer_name:
+#             frappe.throw(_("Customer not found in Car Diagnosis"))
+
+#         # ==============================
+#         # Create Quotation
+#         # ==============================
+#         qtn = frappe.new_doc("Quotation")
+#         qtn.quotation_to = "Customer"
+#         qtn.party_name = diag.customer_name
+#         qtn.remarks = f"Quotation based on Car Diagnosis: {diag.name}"
+#         qtn.custom_car_diagnosis = diag.name
+
+#         if getattr(diag, "email_id", None):
+#             qtn.contact_email = diag.email_id
+
+#         added_items = False
+
+#         # ==============================
+#         # Add Items from Diagnosis
+#         # ==============================
+#         for d in getattr(diag, "car_diagnosis_detail", []):
+#             if not d.part_required:
+#                 continue
+
+#             part_name = d.part_required.strip()
+
+#             # ----------------------------------
+#             # Resolve Item SAFELY
+#             # ----------------------------------
+#             existing_item = None
+
+#             # 1️⃣ Check Item Code
+#             if frappe.db.exists("Item", part_name):
+#                 existing_item = part_name
+
+#             # 2️⃣ Check Item Name
+#             else:
+#                 existing_item = frappe.db.get_value(
+#                     "Item",
+#                     {"item_name": part_name},
+#                     "name"
+#                 )
+
+#             # 3️⃣ Create only if not found
+#             if not existing_item:
+#                 item_doc = frappe.get_doc({
+#                     "doctype": "Item",
+#                     "item_code": part_name,
+#                     "item_name": part_name,
+#                     "stock_uom": "Nos",
+#                     "item_group": "Products",  # change if needed
+#                     "is_stock_item": 0
+#                 })
+#                 item_doc.insert(ignore_permissions=True)
+#                 existing_item = item_doc.name
+
+#             # ----------------------------------
+#             # Safe qty & rate
+#             # ----------------------------------
+#             try:
+#                 qty = float(d.quantity) if d.quantity else 1.0
+#                 if qty <= 0:
+#                     qty = 1.0
+#             except:
+#                 qty = 1.0
+
+#             try:
+#                 rate = float(d.estimated_cost) if d.estimated_cost else 0.0
+#             except:
+#                 rate = 0.0
+
+#             uom = frappe.db.get_value("Item", existing_item, "stock_uom") or "Nos"
+
+#             # ----------------------------------
+#             # Append Quotation Item
+#             # ----------------------------------
+#             item = qtn.append("items", {})
+#             item.item_code = existing_item
+#             item.item_name = part_name
+#             item.qty = qty
+#             item.rate = rate
+#             item.uom = uom
+#             item.amount = qty * rate
+
+#             added_items = True
+
+#         # ==============================
+#         # Fallback Item (No Parts)
+#         # ==============================
+#         if not added_items:
+#             description = (
+#                 getattr(diag, "issues", None)
+#                 or getattr(diag, "problem_description", None)
+#             )
+#             if description:
+#                 item = qtn.append("items", {})
+#                 item.item_name = description
+#                 item.qty = 1.0
+#                 item.rate = 0.0
+#                 item.uom = "Nos"
+#                 item.amount = 0.0
+
+#         # ==============================
+#         # Vehicle Info
+#         # ==============================
+#         vehicle_field = "vehicle" if "vehicle" in qtn.as_dict() else "custom_vehicle"
+#         if getattr(diag, "car", None):
+#             setattr(qtn, vehicle_field, diag.car)
+
+#         # ==============================
+#         # Final Safety Validation
+#         # ==============================
+#         for item in qtn.items:
+#             item.qty = float(item.qty or 1.0)
+#             item.rate = float(item.rate or 0.0)
+#             item.amount = item.qty * item.rate
+
+#         # ==============================
+#         # Insert Quotation
+#         # ==============================
+#         qtn.flags.ignore_permissions = True
+#         qtn.set_missing_values()
+#         qtn.calculate_taxes_and_totals()
+#         qtn.insert(ignore_permissions=True)
+
+#         frappe.db.commit()
+
+#         return {
+#             "status": "success",
+#             "status_code": 201,
+#             "message": f"Quotation created successfully from Car Diagnosis {diag.name}",
+#             "quotation_name": qtn.name
+#         }
+
+#     except Exception as e:
+#         frappe.log_error(
+#             f"Error creating Quotation from Car Diagnosis {diagnosis_name}",
+#             frappe.get_traceback()
+#         )
+#         return {
+#             "status": "error",
+#             "message": str(e)
+#         }
+
+
+
+
 @frappe.whitelist(allow_guest=False)
 def create_quotation_from_car_diagnosis(diagnosis_name):
     """
     API: Create a Quotation from a Car Diagnosis record.
     - Reuses Item if item_code OR item_name exists
     - Creates Item only when truly missing
-    - Prevents duplicate Item Name error
+    - Copies vehicle, model & license plate for Car Repair flow
     """
 
     try:
@@ -722,6 +884,13 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
             frappe.throw(_("Customer not found in Car Diagnosis"))
 
         # ==============================
+        # Fetch Vehicle (SOURCE OF TRUTH)
+        # ==============================
+        vehicle = None
+        if diag.get("car") and frappe.db.exists("Vehicle", diag.car):
+            vehicle = frappe.get_doc("Vehicle", diag.car)
+
+        # ==============================
         # Create Quotation
         # ==============================
         qtn = frappe.new_doc("Quotation")
@@ -730,70 +899,60 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
         qtn.remarks = f"Quotation based on Car Diagnosis: {diag.name}"
         qtn.custom_car_diagnosis = diag.name
 
-        if getattr(diag, "email_id", None):
+        if diag.get("email_id"):
             qtn.contact_email = diag.email_id
+
+        # ==============================
+        # Vehicle Info (🔥 REQUIRED FIX)
+        # ==============================
+        vehicle_field = "vehicle" if "vehicle" in qtn.as_dict() else "custom_vehicle"
+
+        if diag.get("car"):
+            setattr(qtn, vehicle_field, diag.car)
+
+        # ✅ EXACT FIELD NAMES
+        qtn.liscense_plate = vehicle.license_plate if vehicle else ""
+        qtn.model = vehicle.model if vehicle else ""
 
         added_items = False
 
         # ==============================
         # Add Items from Diagnosis
         # ==============================
-        for d in getattr(diag, "car_diagnosis_detail", []):
+        for d in diag.get("car_diagnosis_detail") or []:
             if not d.part_required:
                 continue
 
             part_name = d.part_required.strip()
 
             # ----------------------------------
-            # Resolve Item SAFELY
+            # Resolve Item safely
             # ----------------------------------
             existing_item = None
 
-            # 1️⃣ Check Item Code
             if frappe.db.exists("Item", part_name):
                 existing_item = part_name
-
-            # 2️⃣ Check Item Name
             else:
                 existing_item = frappe.db.get_value(
-                    "Item",
-                    {"item_name": part_name},
-                    "name"
+                    "Item", {"item_name": part_name}, "name"
                 )
 
-            # 3️⃣ Create only if not found
             if not existing_item:
                 item_doc = frappe.get_doc({
                     "doctype": "Item",
                     "item_code": part_name,
                     "item_name": part_name,
                     "stock_uom": "Nos",
-                    "item_group": "Products",  # change if needed
+                    "item_group": "Products",
                     "is_stock_item": 0
                 })
                 item_doc.insert(ignore_permissions=True)
                 existing_item = item_doc.name
 
-            # ----------------------------------
-            # Safe qty & rate
-            # ----------------------------------
-            try:
-                qty = float(d.quantity) if d.quantity else 1.0
-                if qty <= 0:
-                    qty = 1.0
-            except:
-                qty = 1.0
-
-            try:
-                rate = float(d.estimated_cost) if d.estimated_cost else 0.0
-            except:
-                rate = 0.0
-
+            qty = float(d.quantity) if d.quantity and float(d.quantity) > 0 else 1.0
+            rate = float(d.estimated_cost) if d.estimated_cost else 0.0
             uom = frappe.db.get_value("Item", existing_item, "stock_uom") or "Nos"
 
-            # ----------------------------------
-            # Append Quotation Item
-            # ----------------------------------
             item = qtn.append("items", {})
             item.item_code = existing_item
             item.item_name = part_name
@@ -805,13 +964,10 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
             added_items = True
 
         # ==============================
-        # Fallback Item (No Parts)
+        # Fallback Item
         # ==============================
         if not added_items:
-            description = (
-                getattr(diag, "issues", None)
-                or getattr(diag, "problem_description", None)
-            )
+            description = diag.get("issues") or diag.get("problem_description")
             if description:
                 item = qtn.append("items", {})
                 item.item_name = description
@@ -821,14 +977,7 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
                 item.amount = 0.0
 
         # ==============================
-        # Vehicle Info
-        # ==============================
-        vehicle_field = "vehicle" if "vehicle" in qtn.as_dict() else "custom_vehicle"
-        if getattr(diag, "car", None):
-            setattr(qtn, vehicle_field, diag.car)
-
-        # ==============================
-        # Final Safety Validation
+        # Final Validation
         # ==============================
         for item in qtn.items:
             item.qty = float(item.qty or 1.0)
@@ -861,11 +1010,6 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
             "status": "error",
             "message": str(e)
         }
-
-
-
-
-
 
 
 
