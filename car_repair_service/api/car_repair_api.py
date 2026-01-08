@@ -174,114 +174,9 @@ def delete_car_repair(name):
 
 
 
-@frappe.whitelist(allow_guest=False)
-def update_car_repair():
-    validate_api_access("Car repair")
-    data = frappe.form_dict.get("data")
-
-    if not data:
-        return {"status": "error", "message": "Missing 'data' parameter"}
-
-    if isinstance(data, str):
-        data = json.loads(data)
-
-    # Get name from data
-    name = data.get("name")
-    if not name:
-        return {"status": "error", "message": "Missing 'name' parameter in data"}
-
-    try:
-        doc = frappe.get_doc("Car repair", name)
-
-        # helper: check if row contains at least one valid field
-        def is_valid_row(row):
-            if not row or not isinstance(row, dict):
-                return False
-            if len(row.keys()) == 0:
-                return False
-            for field in [
-                "damage_description",
-                "part_required",
-                "status",
-                "quantity",
-                "estimated_cost",
-                "assigned_to",
-                "amount"
-            ]:
-                if row.get(field) not in [None, "", 0]:
-                    return True
-            return False
-
-        # 1. Status override
-        if "status" in data:
-            doc._api_status_override = True
-            doc.status = data.get("status")
-
-        # 2. Update simple parent fields
-        for field, value in data.items():
-            if field not in ["status", "list_of_damage", "name"]:
-                doc.set(field, value)
-
-        # 3. Update/Add child rows
-        if "list_of_damage" in data:
-            existing_rows = {row.name: row for row in doc.list_of_damage}
-
-            for row in data["list_of_damage"]:
-                if not is_valid_row(row):
-                    continue
-
-                # Auto-calculate amount if not provided
-                qty = row.get("quantity") or 0
-                cost = row.get("estimated_cost") or 0
-                amount = row.get("amount")
-                if amount in [None, "", 0]:
-                    amount = qty * cost
-
-                row_name = row.get("name")
-                if row_name and row_name in existing_rows:
-                    # Update existing row
-                    child = existing_rows[row_name]
-                    child.damage_description = row.get("damage_description")
-                    child.part_required = row.get("part_required")
-                    child.status = row.get("status")
-                    child.quantity = qty
-                    child.estimated_cost = cost
-                    child.assigned_to = row.get("assigned_to")
-                    child.amount = amount
-                else:
-                    # Append new row
-                    doc.append("list_of_damage", {
-                        "damage_description": row.get("damage_description"),
-                        "part_required": row.get("part_required"),
-                        "status": row.get("status"),
-                        "quantity": qty,
-                        "estimated_cost": cost,
-                        "assigned_to": row.get("assigned_to"),
-                        "amount": amount
-                    })
-
-        # Save the document
-        doc.save(ignore_permissions=True)
-        frappe.db.commit()
-
-        return {
-            "status": "success",
-            "status_code":200,
-            "message": "Car Repair Updated",
-            "data": doc.name
-        }
-
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Car Repair Update API Error")
-        return {"status": "error", "message": str(e)}
-
-
-
-
 # @frappe.whitelist(allow_guest=False)
 # def update_car_repair():
-#     import json
-    
+#     validate_api_access("Car repair")
 #     data = frappe.form_dict.get("data")
 
 #     if not data:
@@ -304,7 +199,15 @@ def update_car_repair():
 #                 return False
 #             if len(row.keys()) == 0:
 #                 return False
-#             for field in ["damage_description", "part_required", "status", "quantity", "estimated_cost", "assigned_to"]:
+#             for field in [
+#                 "damage_description",
+#                 "part_required",
+#                 "status",
+#                 "quantity",
+#                 "estimated_cost",
+#                 "assigned_to",
+#                 "amount"
+#             ]:
 #                 if row.get(field) not in [None, "", 0]:
 #                     return True
 #             return False
@@ -316,7 +219,7 @@ def update_car_repair():
 
 #         # 2. Update simple parent fields
 #         for field, value in data.items():
-#             if field not in ["status", "list_of_damage", "name"]:  # skip name now
+#             if field not in ["status", "list_of_damage", "name"]:
 #                 doc.set(field, value)
 
 #         # 3. Update/Add child rows
@@ -327,30 +230,43 @@ def update_car_repair():
 #                 if not is_valid_row(row):
 #                     continue
 
+#                 # Auto-calculate amount if not provided
+#                 qty = row.get("quantity") or 0
+#                 cost = row.get("estimated_cost") or 0
+#                 amount = row.get("amount")
+#                 if amount in [None, "", 0]:
+#                     amount = qty * cost
+
 #                 row_name = row.get("name")
 #                 if row_name and row_name in existing_rows:
+#                     # Update existing row
 #                     child = existing_rows[row_name]
 #                     child.damage_description = row.get("damage_description")
 #                     child.part_required = row.get("part_required")
 #                     child.status = row.get("status")
-#                     child.quantity = row.get("quantity")
-#                     child.estimated_cost = row.get("estimated_cost")
+#                     child.quantity = qty
+#                     child.estimated_cost = cost
 #                     child.assigned_to = row.get("assigned_to")
+#                     child.amount = amount
 #                 else:
+#                     # Append new row
 #                     doc.append("list_of_damage", {
 #                         "damage_description": row.get("damage_description"),
 #                         "part_required": row.get("part_required"),
 #                         "status": row.get("status"),
-#                         "quantity": row.get("quantity"),
-#                         "estimated_cost": row.get("estimated_cost"),
-#                         "assigned_to": row.get("assigned_to")
+#                         "quantity": qty,
+#                         "estimated_cost": cost,
+#                         "assigned_to": row.get("assigned_to"),
+#                         "amount": amount
 #                     })
 
+#         # Save the document
 #         doc.save(ignore_permissions=True)
 #         frappe.db.commit()
 
 #         return {
 #             "status": "success",
+#             "status_code":200,
 #             "message": "Car Repair Updated",
 #             "data": doc.name
 #         }
@@ -359,6 +275,94 @@ def update_car_repair():
 #         frappe.log_error(frappe.get_traceback(), "Car Repair Update API Error")
 #         return {"status": "error", "message": str(e)}
 
+@frappe.whitelist(allow_guest=False)
+def update_car_repair():
+    validate_api_access("Car repair")
+    data = frappe.form_dict.get("data")
+
+    if not data:
+        return {"status": "error", "message": "Missing 'data' parameter"}
+
+    if isinstance(data, str):
+        data = json.loads(data)
+
+    name = data.get("name")
+    if not name:
+        return {"status": "error", "message": "Missing 'name' parameter in data"}
+
+    try:
+        doc = frappe.get_doc("Car repair", name)
+
+        UPDATE_FIELDS = [
+            "damage_description",
+            "part_required",
+            "status",
+            "quantity",
+            "estimated_cost",
+            "amount"
+        ]
+
+        def is_assigned_only(row):
+            # Assigned_to exists and no other fields have values
+            if not row.get("assigned_to"):
+                return False
+            for f in UPDATE_FIELDS:
+                if row.get(f) not in [None, "", 0]:
+                    return False
+            return True
+
+        # Update parent fields
+        for field, value in data.items():
+            if field not in ["status", "list_of_damage", "name"]:
+                doc.set(field, value)
+
+        # Child table logic
+        if "list_of_damage" in data:
+            existing_rows = {row.name: row for row in doc.list_of_damage if row.name}
+
+            for row in data["list_of_damage"]:
+
+                qty = row.get("quantity") or 0
+                cost = row.get("estimated_cost") or 0
+                amount = row.get("amount") or (qty * cost)
+
+                row_name = row.get("name")
+
+                # --- Assigned_to only update ---
+                if is_assigned_only(row):
+                    if row_name and row_name in existing_rows:
+                        child = existing_rows[row_name]
+                        # Update the assigned_to field
+                        child.assigned_to = row.get("assigned_to")
+                        frappe.msgprint(f"Assigned_to updated for row: {row_name}")  # Optional debug
+                    else:
+                        frappe.log_error(f"Assigned_to update skipped, row_name missing or invalid: {row}", "Car Repair API")
+                    continue
+
+                # --- Full data: always create new row ---
+                doc.append("list_of_damage", {
+                    "damage_description": row.get("damage_description"),
+                    "part_required": row.get("part_required"),
+                    "status": row.get("status"),
+                    "quantity": qty,
+                    "estimated_cost": cost,
+                    "assigned_to": row.get("assigned_to"),
+                    "amount": amount
+                })
+
+        doc.save(ignore_permissions=True)
+        frappe.db.commit()
+        frappe.clear_messages()
+        return {
+            "status": "success",
+            "status_code": 200,
+            "message": "Car Repair Updated",
+            # "data": doc.name
+        }
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Car Repair Update API Error")
+        return {"status": "error", "message": str(e)}
 
 
 
