@@ -7,7 +7,8 @@ from frappe import _
 ROLE_DOCTYPE_MAP = {
     "Employee": [
         "Book Appointment",
-        "Car repair"
+        "Car repair",
+        "Car Repair Request"
     ],
     "Assign Advisor": [
         "Car Repair Request",
