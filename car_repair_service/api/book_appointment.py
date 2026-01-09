@@ -381,74 +381,6 @@ def create_car_repair_request(appointment_name, status=None):
 
 
 
-# @frappe.whitelist(allow_guest=False)
-# def get_book_appointments(page=1, page_size=10, status=None):
-#     """
-#     Get a paginated list of Book Appointments
-#     with optional status-wise filtering.
-#     """
-#     try:
-#         page = int(page)
-#         page_size = int(page_size)
-
-#         # Build filters dynamically
-#         filters = {}
-#         if status:
-#             filters["status"] = status
-
-#         appointments = frappe.get_all(
-#             "Book Appointment",
-#             filters=filters,
-#             fields=[
-#                 "name",
-#                 "customer_name",
-#                 "email",
-#                 "phone",
-#                 "license_plate",
-#                 "make",
-#                 "model",
-#                 "service_type",
-#                 "appointment_date",
-#                 "appointment_time",
-#                 "vehicle_pickup_required",
-#                 "pickup_address",
-#                 "drop_address",
-#                 "status",
-#                 "description",
-#                 "creation",
-#                 "modified"
-#             ],
-#             start=(page - 1) * page_size,
-#             page_length=page_size,
-#             order_by="creation desc"
-#         )
-
-#         # Count with same filters
-#         total_records = frappe.db.count("Book Appointment", filters=filters)
-#         total_pages = (total_records + page_size - 1) // page_size
-
-#         return {
-#             "status": "success",
-#             "filters": {
-#                 "status": status or "All"
-#             },
-#             "pagination": {
-#                 "current_page": page,
-#                 "page_size": page_size,
-#                 "total_records": total_records,
-#                 "total_pages": total_pages
-#             },
-#             "data": appointments
-#         }
-
-#     except Exception as e:
-#         frappe.log_error(message=str(e), title="Fetch Appointments Error")
-#         return {"status": "error", "message": str(e)}
-
-
-
-
-
 
 @frappe.whitelist(allow_guest=False)
 def get_book_appointments(page=1, page_size=10, status=None, search=None):
@@ -594,40 +526,6 @@ def get_book_appointment(appointment_id):
 # -----------------------------------------------------------------
 # .................update book appointment.........................
 # -----------------------------------------------------------------
-# @frappe.whitelist(allow_guest=False)
-# def update_book_appointment(appointment_id, data):
-    
-#     """
-#     Update an existing Book Appointment.
-#     Expects JSON data (stringified) in 'data' — may include make, model, etc.
-#     """
-#     try:
-#         # Clean input ID (remove accidental quotes)
-#         appointment_id = str(appointment_id).strip().strip("'").strip('"')
-
-#         # Ensure appointment exists
-#         if not frappe.db.exists("Book Appointment", appointment_id):
-#             return {"status": "error", "message": f"Book Appointment {appointment_id} not found"}
-
-#         # Parse JSON payload
-#         data = frappe.parse_json(data)
-
-#         # Get and update the document
-#         doc = frappe.get_doc("Book Appointment", appointment_id)
-#         doc.update(data)
-#         doc.save(ignore_permissions=True)
-#         frappe.db.commit()
-
-#         return {
-#             "status": "success",
-#             "message": "Appointment updated successfully",
-#             "appointment_id": doc.name,
-#             "updated_fields": data
-#         }
-
-#     except Exception as e:
-#         frappe.log_error(message=str(e), title="Update Appointment Error")
-#         return {"status": "error", "message": str(e)}
 
 
 from frappe.utils import getdate, get_time
