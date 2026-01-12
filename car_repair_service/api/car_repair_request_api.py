@@ -1403,7 +1403,7 @@ def update_car_repair_request():
         # -------------------------
         # Update normal fields
         # -------------------------
-        updatable_fields = ["email", "phone", "make", "model", "license_plate", "priority", "remark"]
+        updatable_fields = ["email", "phone", "make", "model", "license_plate", "priority", "remark","driver_name","driver_mob_no","chassis_no","car_manufacturing_year"]
         for field in updatable_fields:
             if field in data and data[field]:
                 doc.set(field, data[field])
@@ -1523,6 +1523,21 @@ def update_car_repair_request():
                         "image_type": image_type
                     })
                     existing_files.add(file_url)
+                    
+                    
+        # -------------------------
+        # Update Vehicle Concern (Child Table)
+        # -------------------------
+        if data.get("vehicle_concern") and isinstance(data["vehicle_concern"], list):
+            # Clear existing rows
+            doc.set("vehicle_concern", [])
+
+            for row in data["vehicle_concern"]:
+                if row.get("vehicle_concern"):
+                    doc.append("vehicle_concern", {
+                        "vehicle_concern": row.get("vehicle_concern")
+                    })
+                    
 
         # -------------------------
         # Save document
