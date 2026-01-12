@@ -1367,6 +1367,8 @@ import base64
 import uuid
 from frappe.utils.file_manager import save_file
 
+
+
 @frappe.whitelist(allow_guest=False)
 def update_car_repair_request():
     """
@@ -1403,36 +1405,100 @@ def update_car_repair_request():
         # -------------------------
         # Update normal fields
         # -------------------------
-        updatable_fields = ["email", "phone", "make", "model", "license_plate", "priority", "remark","driver_name","driver_mob_no","chassis_no","car_manufacturing_year"]
+        updatable_fields = ["email", "phone", "make", "model", "license_plate", "priority", "remark","driver_name","driver_mob_no","chassis_no","odometer_value","car_manufacturing_year"]
         for field in updatable_fields:
             if field in data and data[field]:
                 doc.set(field, data[field])
 
-        # -------------------------
-        # Update odometer photo
-        # -------------------------
-        odometer_photo = data.get("odometer_photo")
-        image_bytes = None
-        if odometer_photo:
-            try:
-                image_bytes = base64.b64decode(odometer_photo)
-            except Exception:
+        # # -------------------------
+        # # Update odometer photo
+        # # -------------------------
+        # odometer_photo = data.get("odometer_photo")
+        # image_bytes = None
+        # if odometer_photo:
+        #     try:
+        #         image_bytes = base64.b64decode(odometer_photo)
+        #     except Exception:
+        #         file_obj = frappe.request.files.get("odometer_photo")
+        #         if file_obj:
+        #             image_bytes = file_obj.read()
+
+        # if image_bytes:
+        #     # filename = f"odometer_{uuid.uuid4()}.png"
+        #     filename = "odometer.png"
+
+        #     file_doc = save_file(
+        #         filename,
+        #         image_bytes,
+        #         dt="Car Repair Request",
+        #         dn=doc.name,
+        #         is_private=0
+        #     )
+        #     doc.odometer_photo = f"/files/{file_doc.file_name}"  # store path
+            
+            # -------------------------
+            # Update odometer photo
+            # -------------------------
+            odometer_photo = data.get("odometer_photo")
+            image_bytes = None
+
+            # 1️⃣ Try base64 from JSON
+            if odometer_photo:
+                try:
+                    image_bytes = base64.b64decode(odometer_photo)
+                except Exception:
+                    image_bytes = None
+
+            # 2️⃣ Try form-data file
+            if not image_bytes:
                 file_obj = frappe.request.files.get("odometer_photo")
                 if file_obj:
                     image_bytes = file_obj.read()
 
-        if image_bytes:
-            # filename = f"odometer_{uuid.uuid4()}.png"
-            filename = "odometer.png"
+            # 3️⃣ Save file if bytes available
+            if image_bytes:
+                filename = f"odometer_{uuid.uuid4().hex}.png"
+                file_doc = save_file(
+                    filename,
+                    image_bytes,
+                    dt="Car Repair Request",
+                    dn=doc.name,
+                    is_private=0
+                )
+                doc.odometer_photo = file_doc.file_url
 
+            
+            
+        # -------------------------
+        # Update signature
+        # -------------------------
+        signature_data = data.get("signature")
+        signature_bytes = None
+
+        # Base64 JSON
+        if signature_data:
+            try:
+                signature_bytes = base64.b64decode(signature_data)
+            except Exception:
+                signature_bytes = None
+
+        # Form-data file
+        if not signature_bytes:
+            file_obj = frappe.request.files.get("signature")
+            if file_obj:
+                signature_bytes = file_obj.read()
+
+        # Save
+        if signature_bytes:
+            filename = f"signature_{uuid.uuid4().hex}.png"
             file_doc = save_file(
                 filename,
-                image_bytes,
+                signature_bytes,
                 dt="Car Repair Request",
                 dn=doc.name,
                 is_private=0
             )
-            doc.odometer_photo = f"/files/{file_doc.file_name}"  # store path
+            doc.signature = file_doc.file_url
 
         # -------------------------
         # Image view map
@@ -1536,7 +1602,12 @@ def update_car_repair_request():
                 if row.get("vehicle_concern"):
                     doc.append("vehicle_concern", {
                         "vehicle_concern": row.get("vehicle_concern")
+                    
                     })
+                    
+
+
+                            
                     
 
         # -------------------------
