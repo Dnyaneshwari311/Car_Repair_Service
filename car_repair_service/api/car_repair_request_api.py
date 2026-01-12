@@ -1405,7 +1405,7 @@ def update_car_repair_request():
         # -------------------------
         # Update normal fields
         # -------------------------
-        updatable_fields = ["email", "phone", "make", "model", "license_plate", "priority", "remark","driver_name","driver_mob_no","chassis_no","odometer_value","car_manufacturing_year"]
+        updatable_fields = ["email", "phone", "make", "model","assign_adviser","license_plate", "priority", "remark","driver_name","driver_mob_no","chassis_no","odometer_value","car_manufacturing_year"]
         for field in updatable_fields:
             if field in data and data[field]:
                 doc.set(field, data[field])
