@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "2026-27-CARD-.#####",
  "creation": "2025-09-25 17:41:43.120076",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -190,10 +191,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-06 18:59:36.678251",
+ "modified": "2026-01-12 18:58:49.898926",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Diagnosis",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {

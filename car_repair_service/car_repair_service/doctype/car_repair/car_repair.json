@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "2026-27-CARR-.#####",
  "creation": "2025-09-26 10:20:32.633512",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -180,10 +181,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-06 19:00:18.919179",
+ "modified": "2026-01-12 19:00:10.688332",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car repair",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {

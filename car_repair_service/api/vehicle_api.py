@@ -275,13 +275,16 @@ def delete_vehicle(license_plate):
 
 
 
+import frappe
+import json
+from frappe import _
+
 @frappe.whitelist(allow_guest=False)
 def list_vehicle(filters=None, customer=None, limit_start=0, limit_page_length=10):
     """
     Fetch paginated list of vehicles with optional filters.
-    Example:
-    /api/method/car_repair_service.api.vehicle_api.list_vehicle?customer=Customer%20A&limit_start=0&limit_page_length=5
     """
+
     try:
         # Convert filters from string to dict
         if filters:
@@ -294,27 +297,38 @@ def list_vehicle(filters=None, customer=None, limit_start=0, limit_page_length=1
         if customer:
             filters["custom_customer_name"] = customer
 
-        # Get total count for pagination
+        # Total count (for pagination)
         total_count = frappe.db.count("Vehicle", filters)
 
-        # Fetch paginated vehicles
+        # Fetch vehicles
         vehicles = frappe.get_all(
             "Vehicle",
             filters=filters,
             fields=[
-                "name", "license_plate", "make", "model", "chassis_no","car_manufacturing_year", "modified","custom_customer_name"
+                "name",
+                "license_plate",
+                "make",
+                "model",
+                "chassis_no",
+                "car_manufacturing_year",
+                "modified",
+                "custom_customer_name",
             ],
             order_by="modified desc",
             limit_start=int(limit_start),
             limit_page_length=int(limit_page_length),
         )
 
-        # Convert make/model to human-readable
+        # Convert make/model to readable names
         for v in vehicles:
             if v.get("make"):
-                v["make"] = frappe.db.get_value("Vehicle Make", v["make"], "make")
+                v["make"] = frappe.db.get_value(
+                    "Vehicle Make", v["make"], "make"
+                )
             if v.get("model"):
-                v["model"] = frappe.db.get_value("Vehicle Model", v["model"], "model")
+                v["model"] = frappe.db.get_value(
+                    "Vehicle Model", v["model"], "model"
+                )
 
         return {
             "status": "success",
@@ -322,13 +336,12 @@ def list_vehicle(filters=None, customer=None, limit_start=0, limit_page_length=1
             "total": total_count,
             "page_size": int(limit_page_length),
             "page_start": int(limit_start),
-            "data": vehicles
+            "data": vehicles,
         }
 
     except Exception as e:
         frappe.local.response.http_status_code = 500
         return {"status": "error", "message": str(e)}
-
 
 
 
