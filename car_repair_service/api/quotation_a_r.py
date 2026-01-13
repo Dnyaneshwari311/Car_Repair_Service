@@ -376,23 +376,10 @@ def create_or_update_car_repair(q):
         or diagnosis.get("phone")
     )
     # -------------------------------------------------------------
-    # Vehicle Info (Quotation → Car Repair)
+    # Vehicle Info (Diagnosis → Car Repair ONLY)
     # -------------------------------------------------------------
-    license_plate = (
-        q.get("license_plate")
-        or diagnosis.get("license_plate")
-        or ""
-    )
-
-    model = q.get("model") or ""
-
-    # Fallback only if still empty
-    if not model and diagnosis.get("car") and frappe.db.exists("Vehicle", diagnosis.get("car")):
-        vehicle = frappe.get_doc("Vehicle", diagnosis.get("car"))
-
-        model = vehicle.model or ""
-        license_plate = vehicle.license_plate or license_plate
-
+    model = diagnosis.get("model") or ""
+    license_plate = diagnosis.get("license_plate") or ""
 
 
     # -------------------------------------------------------------
@@ -452,6 +439,7 @@ def create_or_update_car_repair(q):
     delivery_time = diagnosis.get("estimated_delivery_time")
     vehicle_pick_up = diagnosis.get("vehicle_pick_up")
     diagnosis_signature = diagnosis.get("signature")
+    model = diagnosis.get("model")
 
     estimated_total = (
         q.get("grand_total")
@@ -482,6 +470,8 @@ def create_or_update_car_repair(q):
             "vehicle_pick_up": vehicle_pick_up,
             "assign_adviser": employee,
             "estimated_total": estimated_total,
+            "model": model
+
         })
 
         # Copy signature only if empty
@@ -521,6 +511,7 @@ def create_or_update_car_repair(q):
         "signature": diagnosis_signature,
         "assign_adviser": employee,
         "estimated_total": estimated_total,
+        
     })
 
     for row in child_rows:
