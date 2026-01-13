@@ -377,20 +377,23 @@ def create_or_update_car_repair(q):
     )
 
     # -------------------------------------------------------------
-    # Vehicle Info (FINAL – CORRECT SOURCE)
+    # Vehicle Info (Diagnosis → Car Repair)
     # -------------------------------------------------------------
     model = ""
     license_plate = diagnosis.get("license_plate") or ""
 
-    # 1️⃣ If Diagnosis already has model name (custom field)
-    if diagnosis.meta.has_field("vehicle_model") and diagnosis.get("vehicle_model"):
+    # 1️⃣ Direct model from Diagnosis (MAIN SOURCE)
+    if diagnosis.meta.has_field("model") and diagnosis.get("model"):
+        model = diagnosis.get("model")
+
+    # 2️⃣ Custom vehicle_model field (fallback)
+    elif diagnosis.meta.has_field("vehicle_model") and diagnosis.get("vehicle_model"):
         model = diagnosis.get("vehicle_model")
 
-    # 2️⃣ Else fetch from Vehicle → Vehicle Model → model name
+    # 3️⃣ Vehicle → Vehicle Model (last fallback)
     elif diagnosis.get("car") and frappe.db.exists("Vehicle", diagnosis.get("car")):
         vehicle = frappe.get_doc("Vehicle", diagnosis.get("car"))
 
-        # vehicle.model is LINK → Vehicle Model
         model = frappe.db.get_value(
             "Vehicle Model",
             vehicle.model,
