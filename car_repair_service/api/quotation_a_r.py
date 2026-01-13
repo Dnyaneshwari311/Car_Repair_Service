@@ -92,6 +92,14 @@ def reject_quotation(quotation):
 
 
 
+
+
+
+
+
+
+
+
 def create_or_update_car_repair(q):
     """Create or Update Car Repair from Quotation and Car Diagnosis."""
 
