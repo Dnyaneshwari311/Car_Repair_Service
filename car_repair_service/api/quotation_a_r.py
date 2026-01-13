@@ -338,30 +338,38 @@ def reject_quotation(quotation):
 
 
 
+import frappe
+
 def create_or_update_car_repair(q):
-    """Create or Update Car Repair from Quotation and Car Diagnosis"""
+    """
+    Create or Update Car Repair from Quotation and Car Diagnosis
+    """
 
     car_diagnosis_id = q.get("custom_car_diagnosis")
     if not car_diagnosis_id:
+        frappe.log_error("No Car Diagnosis linked to Quotation {}".format(q.name))
         return None
 
-    try:
-        diagnosis = frappe.get_doc("Car Diagnosis", car_diagnosis_id)
-    except Exception:
+    # -----------------------------
+    # Fetch Car Diagnosis safely
+    # -----------------------------
+    if not frappe.db.exists("Car Diagnosis", car_diagnosis_id):
+        frappe.log_error("Car Diagnosis {} does not exist".format(car_diagnosis_id))
         return None
 
-    # -------------------------------------------------------------
-    # Find existing Car Repair
-    # -------------------------------------------------------------
-    existing_repair_name = frappe.db.get_value(
-        "Car repair", {"quotation": q.name}
-    ) or frappe.db.get_value(
-        "Car repair", {"car_diagnosis": diagnosis.name}
+    diagnosis = frappe.get_doc("Car Diagnosis", car_diagnosis_id)
+
+    # -----------------------------
+    # Check for existing Car Repair
+    # -----------------------------
+    existing_repair_name = (
+        frappe.db.get_value("Car repair", {"quotation": q.name})
+        or frappe.db.get_value("Car repair", {"car_diagnosis": diagnosis.name})
     )
 
-    # -------------------------------------------------------------
+    # -----------------------------
     # Customer Info
-    # -------------------------------------------------------------
+    # -----------------------------
     customer_name = (
         q.get("customer")
         or q.get("party_name")
@@ -370,36 +378,28 @@ def create_or_update_car_repair(q):
     )
 
     email = q.get("contact_email") or diagnosis.get("email_id")
-    phone = (
-        q.get("contact_no")
-        or q.get("contact_mobile")
-        or diagnosis.get("phone")
-    )
-    # -------------------------------------------------------------
-    # Vehicle Info (Diagnosis → Car Repair ONLY)
-    # -------------------------------------------------------------
-    model = diagnosis.get("model") or ""
+    phone = q.get("contact_no") or q.get("contact_mobile") or diagnosis.get("phone")
+
+    # -----------------------------
+    # Vehicle Info
+    # -----------------------------
+    # Ensure correct fieldname
+    model = diagnosis.get("model") or diagnosis.get("vehicle_model") or ""
     license_plate = diagnosis.get("license_plate") or ""
 
-
-    # -------------------------------------------------------------
+    # -----------------------------
     # Prepare list_of_damage (Diagnosis = Source of Truth)
-    # -------------------------------------------------------------
+    # -----------------------------
     child_rows = []
     seen = set()
-
     for row in diagnosis.get("car_diagnosis_detail") or []:
         row = row.as_dict()
-
         desc = (row.get("damage_description") or "").strip()
         if not desc or desc.lower() in seen:
             continue
-
         seen.add(desc.lower())
-
         qty = row.get("quantity") or 0
         rate = row.get("estimated_cost") or 0
-
         child_rows.append({
             "damage_description": desc,
             "assigned_to": None,
@@ -409,9 +409,9 @@ def create_or_update_car_repair(q):
             "amount": qty * rate
         })
 
-    # -------------------------------------------------------------
-    # Vehicle Concern
-    # -------------------------------------------------------------
+    # -----------------------------
+    # Vehicle Concerns
+    # -----------------------------
     concern_rows = []
     for c in diagnosis.get("vehicle_concern") or []:
         c = c.as_dict()
@@ -419,28 +419,22 @@ def create_or_update_car_repair(q):
             "vehicle_concern": c.get("vehicle_concern") or ""
         })
 
-    # -------------------------------------------------------------
+    # -----------------------------
     # Adviser Assignment
-    # -------------------------------------------------------------
+    # -----------------------------
     employee = (
         diagnosis.get("assign_adviser")
         or q.get("assign_adviser")
-        or frappe.db.get_value(
-            "Employee",
-            {"user_id": frappe.session.user},
-            "name"
-        )
+        or frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
     )
 
-    # -------------------------------------------------------------
+    # -----------------------------
     # Common fields from Diagnosis
-    # -------------------------------------------------------------
+    # -----------------------------
     delivery_date = diagnosis.get("estimated_delivery_date")
     delivery_time = diagnosis.get("estimated_delivery_time")
     vehicle_pick_up = diagnosis.get("vehicle_pick_up")
     diagnosis_signature = diagnosis.get("signature")
-    model = diagnosis.get("model")
-
     estimated_total = (
         q.get("grand_total")
         or q.get("rounded_total")
@@ -454,7 +448,6 @@ def create_or_update_car_repair(q):
     # =============================================================
     if existing_repair_name:
         repair = frappe.get_doc("Car repair", existing_repair_name)
-
         repair.update({
             "car_diagnosis": diagnosis.name,
             "car": diagnosis.get("car"),
@@ -469,9 +462,7 @@ def create_or_update_car_repair(q):
             "estimated_delivery_time": delivery_time,
             "vehicle_pick_up": vehicle_pick_up,
             "assign_adviser": employee,
-            "estimated_total": estimated_total,
-            "model": model
-
+            "estimated_total": estimated_total
         })
 
         # Copy signature only if empty
@@ -511,7 +502,6 @@ def create_or_update_car_repair(q):
         "signature": diagnosis_signature,
         "assign_adviser": employee,
         "estimated_total": estimated_total,
-        
     })
 
     for row in child_rows:
@@ -523,10 +513,6 @@ def create_or_update_car_repair(q):
     repair.insert(ignore_permissions=True)
     frappe.db.commit()
     return repair.name
-
-
-
-
 
 
 
