@@ -106,7 +106,7 @@
   {
    "fieldname": "model",
    "fieldtype": "Data",
-   "hidden": 1,
+   "in_list_view": 1,
    "label": "Model"
   },
   {
@@ -190,7 +190,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-13 15:10:56.237843",
+ "modified": "2026-01-13 15:14:53.250326",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Diagnosis",
