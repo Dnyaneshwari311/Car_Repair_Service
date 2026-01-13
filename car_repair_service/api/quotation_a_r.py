@@ -503,11 +503,8 @@ def create_or_update_car_repair(q):
         "doctype": "Car repair",
         "car_diagnosis": diagnosis.name,
         "car": diagnosis.get("car"),
-        "model": (
-        frappe.db.get_value("Vehicle Model", vehicle.model, "model")
-        if vehicle else ""
-        ),
-       "license_plate": vehicle.license_plate if vehicle else "",
+        "model": model,
+        "license_plate": license_plate,
         "customer_name": customer_name,
         "email": email,
         "phone": phone,
