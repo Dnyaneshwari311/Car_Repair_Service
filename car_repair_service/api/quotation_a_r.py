@@ -379,7 +379,7 @@ def create_or_update_car_repair(q):
     # -------------------------------------------------------------
     # Vehicle Info (SOURCE = DIAGNOSIS ONLY ✅)
     # -------------------------------------------------------------
-    model = diagnosis.get("model") or ""
+    model = diagnosis.get("vehicle_model") or ""
     license_plate = diagnosis.get("license_plate") or ""
 
     # -------------------------------------------------------------
