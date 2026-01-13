@@ -1,7 +1,6 @@
 
 import frappe
-from frappe.utils import get_url
-
+from frappe.utils import get_url,today
 def send_quotation_email_with_links(doc, subject_prefix="Quotation"):
     """
     Send email to customer with direct link to the custom quotation page.
@@ -10,7 +9,11 @@ def send_quotation_email_with_links(doc, subject_prefix="Quotation"):
 
     if not doc.contact_email:
         return
-
+    
+    if not doc.valid_till:
+        doc.valid_till = today()
+        doc.db_set("valid_till", doc.valid_till, update_modified=False)
+    
     # Skip sending creation email if workflow already Approved/Rejected
     if subject_prefix == "New Quotation" and doc.workflow_state in ["Approved", "Rejected"]:
         return
@@ -40,6 +43,8 @@ def send_quotation_email_with_links(doc, subject_prefix="Quotation"):
     message = f"""
     Dear Customer,<br><br>
     {message_intro}<br><br>
+    
+    <b>Valid Till:</b> {doc.valid_till}<br><br>
     
     You can view the quotation here:<br>
     <a href="{quotation_link}" style="display:inline-block; padding:10px 14px; background:#1976d2; color:#fff; text-decoration:none; border-radius:6px;">

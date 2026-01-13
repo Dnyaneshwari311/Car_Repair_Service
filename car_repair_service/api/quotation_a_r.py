@@ -741,7 +741,7 @@ def create_or_update_car_repair(q):
     # for d in repair.list_of_damage:
     #   d.assigned_to = None
 
-    repair.db_update()
+    # repair.db_update()
     frappe.db.commit()
     return repair.name
 
