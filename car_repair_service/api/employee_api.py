@@ -49,14 +49,18 @@ def list_employees(page=1, page_size=20, search=None):
 
 @frappe.whitelist(methods=["POST"])
 def create_employee(data=None):
-    """
-    Create Employee (ERPNext default flow)
-    """
     if not data:
         data = frappe.form_dict
 
     if isinstance(data, str):
         data = frappe.parse_json(data)
+
+    # Mandatory validation (clean API error)
+    if not data.get("date_of_birth"):
+        return {
+            "status": "error",
+            "message": "date_of_birth is required"
+        }
 
     try:
         employee = frappe.get_doc({
@@ -68,6 +72,7 @@ def create_employee(data=None):
             "department": data.get("department"),
             "designation": data.get("designation"),
             "gender": data.get("gender"),
+            "date_of_birth": data.get("date_of_birth"),  # ✅ REQUIRED
             "date_of_joining": data.get("date_of_joining"),
             "status": data.get("status", "Active"),
             "personal_email": data.get("personal_email"),
@@ -76,17 +81,16 @@ def create_employee(data=None):
 
         employee.insert(ignore_permissions=True)
         frappe.db.commit()
-        frappe.clear_messages()
+
         return {
             "status": "success",
-            "status_code":200,
+            "status_code": 200,
             "employee": employee.name
         }
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Create Employee API Error")
         return {"status": "error", "message": str(e)}
-
 
 
 
