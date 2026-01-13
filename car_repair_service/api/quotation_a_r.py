@@ -378,11 +378,21 @@ def create_or_update_car_repair(q):
     phone = q.get("contact_no") or q.get("contact_mobile") or diagnosis.get("phone")
 
     # -----------------------------
-    # Vehicle Info
+    # Vehicle Info (SOURCE OF TRUTH = Vehicle)
     # -----------------------------
-    # Ensure correct fieldname
-    model = diagnosis.get("model") or diagnosis.get("vehicle_model") or ""
-    license_plate = diagnosis.get("license_plate") or ""
+    model = ""
+    license_plate = ""
+
+    vehicle = None
+    if diagnosis.get("car") and frappe.db.exists("Vehicle", diagnosis.car):
+        vehicle = frappe.get_doc("Vehicle", diagnosis.car)
+        license_plate = vehicle.get("license_plate") or vehicle.get("vehicle_registration_number") or ""
+        model = vehicle.get("model") or vehicle.get("vehicle_model") or ""
+    else:
+        # fallback (only if Vehicle missing)
+        license_plate = diagnosis.get("license_plate") or ""
+        model = diagnosis.get("model") or ""
+
 
     # -----------------------------
     # Prepare list_of_damage (Diagnosis = Source of Truth)
