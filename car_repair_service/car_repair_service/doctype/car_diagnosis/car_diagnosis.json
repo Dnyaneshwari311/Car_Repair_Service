@@ -105,10 +105,9 @@
   },
   {
    "fieldname": "model",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "hidden": 1,
-   "label": "Model",
-   "options": "Vehicle"
+   "label": "Model"
   },
   {
    "fieldname": "license_plate",
@@ -191,7 +190,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-12 18:58:49.898926",
+ "modified": "2026-01-13 15:10:56.237843",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Diagnosis",
