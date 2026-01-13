@@ -381,6 +381,14 @@ def create_or_update_car_repair(q):
     # -------------------------------------------------------------
     model = diagnosis.get("model") or ""
     license_plate = diagnosis.get("license_plate") or ""
+    
+    
+    if not model and diagnosis.get("car"):
+      model = frappe.db.get_value(
+        "Vehicle",
+        diagnosis.get("car"),
+        "model"
+    ) or ""
 
     # -------------------------------------------------------------
     # Prepare list_of_damage (Diagnosis = Source of Truth)
