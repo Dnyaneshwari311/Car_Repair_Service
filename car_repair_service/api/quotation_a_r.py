@@ -376,23 +376,21 @@ def create_or_update_car_repair(q):
         or diagnosis.get("phone")
     )
     # -------------------------------------------------------------
-    # Vehicle Info (Diagnosis → Car Repair)
+    # Vehicle Info (Quotation → Car Repair)
     # -------------------------------------------------------------
-    license_plate = diagnosis.get("license_plate") or ""
+    license_plate = (
+        q.get("license_plate")
+        or diagnosis.get("license_plate")
+        or ""
+    )
 
-    # DIRECT COPY — NO CONDITIONS
-    model = diagnosis.get("model") or ""
+    model = q.get("model") or ""
 
-    # Fallback only if empty
+    # Fallback only if still empty
     if not model and diagnosis.get("car") and frappe.db.exists("Vehicle", diagnosis.get("car")):
         vehicle = frappe.get_doc("Vehicle", diagnosis.get("car"))
 
-        model = frappe.db.get_value(
-            "Vehicle Model",
-            vehicle.model,
-            "model"
-        ) or ""
-
+        model = vehicle.model or ""
         license_plate = vehicle.license_plate or license_plate
 
 
