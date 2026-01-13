@@ -663,3 +663,61 @@ def cancel_book_appointment(appointment_name):
 
 
 
+
+
+
+
+@frappe.whitelist(allow_guest=False)
+def get_car_repair_request_by_appointment(appointment_id):
+    """
+    Get FULL Car Repair Request data using Book Appointment ID
+    """
+    validate_api_access("Book Appointment")
+
+    try:
+        # ---------------------------
+        # Validate Appointment
+        # ---------------------------
+        if not frappe.db.exists("Book Appointment", appointment_id):
+            return {
+                "status": "error",
+                "message": f"Book Appointment '{appointment_id}' not found"
+            }
+
+        # ---------------------------
+        # Fetch Car Repair Request
+        # ---------------------------
+        car_repair_request_id = frappe.db.exists(
+            "Car Repair Request",
+            {"appointment": appointment_id}
+        )
+
+        if not car_repair_request_id:
+            return {
+                "status": "success",
+                "status_code": 200,
+                "appointment_id": appointment_id,
+                "car_repair_request": None,
+                "message": "No Car Repair Request found for this appointment"
+            }
+
+        repair = frappe.get_doc("Car Repair Request", car_repair_request_id)
+
+        frappe.clear_messages()
+
+        # ---------------------------
+        # ✅ FULL DATA RETURN
+        # ---------------------------
+        return {
+            "status": "success",
+            "status_code": 200,
+            "appointment_id": appointment_id,
+            "data": repair.as_dict()
+        }
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Get Car Repair Request Error")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
