@@ -81,6 +81,7 @@
   {
    "fieldname": "reason_for_repair_in_detail",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Reason For Repair in Detail"
   },
   {
@@ -181,7 +182,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-12 19:00:10.688332",
+ "modified": "2026-01-13 14:42:00.584571",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car repair",
