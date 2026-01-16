@@ -272,63 +272,109 @@ def delete_vehicle(license_plate):
 
 
 
-
-
-
-import frappe
-import json
-from frappe import _
-
 @frappe.whitelist(allow_guest=False)
-def list_vehicle(filters=None, customer=None, limit_start=0, limit_page_length=10):
+def list_vehicle(
+    custom_customer_name=None,
+    make=None,
+    model=None,
+    search=None,
+    limit_start=0,
+    limit_page_length=10
+):
     """
-    Fetch paginated list of vehicles with optional filters.
+    Fetch paginated list of vehicles
+    Search works on:
+    - Customer Name
+    - Vehicle Make (linked doctype)
+    - Vehicle Model (linked doctype)
     """
 
     try:
-        # Convert filters from string to dict
-        if filters:
-            if isinstance(filters, str):
-                filters = json.loads(filters)
-        else:
-            filters = {}
+        conditions = []
+        values = {}
 
-        # Add customer filter if provided
-        if customer:
-            filters["custom_customer_name"] = customer
+        # -----------------------------
+        # SEARCH (OR CONDITION)
+        # -----------------------------
+        if search:
+            conditions.append("""
+                (
+                    v.custom_customer_name LIKE %(search)s OR
+                    vm.make LIKE %(search)s OR
+                    vmo.model LIKE %(search)s
+                )
+            """)
+            values["search"] = f"%{search}%"
 
-        # Total count (for pagination)
-        total_count = frappe.db.count("Vehicle", filters)
+        # -----------------------------
+        # CUSTOMER NAME FILTER
+        # -----------------------------
+        if custom_customer_name:
+            conditions.append("v.custom_customer_name LIKE %(custom_customer_name)s")
+            values["custom_customer_name"] = f"%{custom_customer_name}%"
 
-        # Fetch vehicles
-        vehicles = frappe.get_all(
-            "Vehicle",
-            filters=filters,
-            fields=[
-                "name",
-                "license_plate",
-                "make",
-                "model",
-                "chassis_no",
-                "car_manufacturing_year",
-                "modified",
-                "custom_customer_name",
-            ],
-            order_by="modified desc",
-            limit_start=int(limit_start),
-            limit_page_length=int(limit_page_length),
+        # -----------------------------
+        # MAKE FILTER (DOCNAME)
+        # -----------------------------
+        if make:
+            conditions.append("v.make = %(make)s")
+            values["make"] = make
+
+        # -----------------------------
+        # MODEL FILTER (DOCNAME)
+        # -----------------------------
+        if model:
+            conditions.append("v.model = %(model)s")
+            values["model"] = model
+
+        where_clause = " AND ".join(conditions)
+        if where_clause:
+            where_clause = "WHERE " + where_clause
+
+        # -----------------------------
+        # TOTAL COUNT
+        # -----------------------------
+        total_count = frappe.db.sql(
+            f"""
+            SELECT COUNT(*)
+            FROM `tabVehicle` v
+            LEFT JOIN `tabVehicle Make` vm ON vm.name = v.make
+            LEFT JOIN `tabVehicle Model` vmo ON vmo.name = v.model
+            {where_clause}
+            """,
+            values
+        )[0][0]
+
+        # -----------------------------
+        # FETCH VEHICLES
+        # -----------------------------
+        vehicles = frappe.db.sql(
+            f"""
+            SELECT
+                v.name,
+                v.license_plate,
+                v.make,
+                vm.make AS make_name,
+                v.model,
+                vmo.model AS model_name,
+                v.chassis_no,
+                v.car_manufacturing_year,
+                v.modified,
+                v.custom_customer_name
+            FROM `tabVehicle` v
+            LEFT JOIN `tabVehicle Make` vm ON vm.name = v.make
+            LEFT JOIN `tabVehicle Model` vmo ON vmo.name = v.model
+            {where_clause}
+            ORDER BY v.modified DESC
+            LIMIT %(start)s, %(page_len)s
+            """,
+            {
+                **values,
+                "start": int(limit_start),
+                "page_len": int(limit_page_length)
+            },
+            as_dict=True
         )
-
-        # Convert make/model to readable names
-        for v in vehicles:
-            if v.get("make"):
-                v["make"] = frappe.db.get_value(
-                    "Vehicle Make", v["make"], "make"
-                )
-            if v.get("model"):
-                v["model"] = frappe.db.get_value(
-                    "Vehicle Model", v["model"], "model"
-                )
 
         return {
             "status": "success",
@@ -341,7 +387,10 @@ def list_vehicle(filters=None, customer=None, limit_start=0, limit_page_length=1
 
     except Exception as e:
         frappe.local.response.http_status_code = 500
-        return {"status": "error", "message": str(e)}
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 
