@@ -281,25 +281,20 @@ def list_vehicle(
     limit_start=0,
     limit_page_length=10
 ):
-    """
-    Fetch paginated list of vehicles
-    Search works on:
-    - Customer Name
-    - Vehicle Make (linked doctype)
-    - Vehicle Model (linked doctype)
-    """
-
     try:
         conditions = []
         values = {}
 
         # -----------------------------
-        # SEARCH (OR CONDITION)
+        # SEARCH
         # -----------------------------
         if search:
             conditions.append("""
                 (
                     v.custom_customer_name LIKE %(search)s OR
+                    c.customer_name LIKE %(search)s OR
+                    c.email_id LIKE %(search)s OR
+                    c.mobile_no LIKE %(search)s OR
                     vm.make LIKE %(search)s OR
                     vmo.model LIKE %(search)s
                 )
@@ -313,16 +308,10 @@ def list_vehicle(
             conditions.append("v.custom_customer_name LIKE %(custom_customer_name)s")
             values["custom_customer_name"] = f"%{custom_customer_name}%"
 
-        # -----------------------------
-        # MAKE FILTER (DOCNAME)
-        # -----------------------------
         if make:
             conditions.append("v.make = %(make)s")
             values["make"] = make
 
-        # -----------------------------
-        # MODEL FILTER (DOCNAME)
-        # -----------------------------
         if model:
             conditions.append("v.model = %(model)s")
             values["model"] = model
@@ -338,6 +327,8 @@ def list_vehicle(
             f"""
             SELECT COUNT(*)
             FROM `tabVehicle` v
+            LEFT JOIN `tabCustomer` c
+                ON c.customer_name = v.custom_customer_name
             LEFT JOIN `tabVehicle Make` vm ON vm.name = v.make
             LEFT JOIN `tabVehicle Model` vmo ON vmo.name = v.model
             {where_clause}
@@ -360,8 +351,18 @@ def list_vehicle(
                 v.chassis_no,
                 v.car_manufacturing_year,
                 v.modified,
-                v.custom_customer_name
+
+                -- EXISTING KEY (UNCHANGED)
+                v.custom_customer_name,
+
+                -- NEW CUSTOMER FIELDS
+                c.name AS customer_id,
+                c.email_id AS email,
+                c.mobile_no AS phone
+
             FROM `tabVehicle` v
+            LEFT JOIN `tabCustomer` c
+                ON c.customer_name = v.custom_customer_name
             LEFT JOIN `tabVehicle Make` vm ON vm.name = v.make
             LEFT JOIN `tabVehicle Model` vmo ON vmo.name = v.model
             {where_clause}
@@ -391,7 +392,6 @@ def list_vehicle(
             "status": "error",
             "message": str(e)
         }
-
 
 
 
