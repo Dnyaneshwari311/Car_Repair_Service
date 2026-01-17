@@ -1,10 +1,12 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "2026-27-Model-.#####",
  "creation": "2025-10-18 18:18:51.853613",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "make",
   "model"
  ],
  "fields": [
@@ -15,15 +17,22 @@
    "label": "Model",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "make",
+   "fieldtype": "Link",
+   "label": "Make",
+   "options": "Vehicle Make"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-02 14:07:06.560693",
+ "modified": "2026-01-16 09:45:54.475319",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Vehicle Model",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
