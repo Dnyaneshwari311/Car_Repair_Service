@@ -85,6 +85,16 @@ def create_book_appointment(data):
 
             appointment_time = get_time(appointment_time)
             current_time = now_datetime().time()
+            
+            
+        if appointment_time <= current_time:
+                return {
+                    "status": "error",
+                    "message": "Past time is not allowed. Please select a future time."
+                }
+        else:
+            if appointment_time:
+                appointment_time = get_time(appointment_time)   
 
         # ---------------------------
         #   AUTO CREATE MASTERS
@@ -961,22 +971,43 @@ def cancel_book_appointment(appointment_name):
 def get_car_repair_request_by_appointment(appointment_id):
     """
     Get FULL Car Repair Request data using Book Appointment ID
+    Permission:
+    - Employee: only own created Car Repair Request
+    - Receptionist / Administrator: all
+    - Adviser: not allowed
     """
+
     validate_api_access("Book Appointment")
 
     try:
-        # ---------------------------
-        # Validate Appointment
-        # ---------------------------
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        is_admin = "Administrator" in roles
+        is_receptionist = "Receptionist" in roles
+        is_employee = "Employee" in roles
+
+        # ----------------------------------
+        # BLOCK ADVISER
+        # ----------------------------------
+        if "Adviser" in roles and not (is_admin or is_receptionist):
+            frappe.throw(
+                "You are not allowed to view Car Repair Requests",
+                frappe.PermissionError
+            )
+
+        # ----------------------------------
+        # VALIDATE APPOINTMENT
+        # ----------------------------------
         if not frappe.db.exists("Book Appointment", appointment_id):
             return {
                 "status": "error",
                 "message": f"Book Appointment '{appointment_id}' not found"
             }
 
-        # ---------------------------
-        # Fetch Car Repair Request
-        # ---------------------------
+        # ----------------------------------
+        # FETCH CAR REPAIR REQUEST
+        # ----------------------------------
         car_repair_request_id = frappe.db.exists(
             "Car Repair Request",
             {"appointment": appointment_id}
@@ -993,11 +1024,18 @@ def get_car_repair_request_by_appointment(appointment_id):
 
         repair = frappe.get_doc("Car Repair Request", car_repair_request_id)
 
+        # ----------------------------------
+        # EMPLOYEE → ONLY OWN CREATED
+        # ----------------------------------
+        if is_employee and not (is_admin or is_receptionist):
+            if repair.owner != user:
+                frappe.throw(
+                    "You are not allowed to view this Car Repair Request",
+                    frappe.PermissionError
+                )
+
         frappe.clear_messages()
 
-        # ---------------------------
-        # ✅ FULL DATA RETURN
-        # ---------------------------
         return {
             "status": "success",
             "status_code": 200,
@@ -1005,8 +1043,14 @@ def get_car_repair_request_by_appointment(appointment_id):
             "data": repair.as_dict()
         }
 
+    except frappe.PermissionError:
+        raise
+
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Get Car Repair Request Error")
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Get Car Repair Request Error"
+        )
         return {
             "status": "error",
             "message": str(e)
