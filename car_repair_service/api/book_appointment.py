@@ -6,16 +6,33 @@ from car_repair_service.api.role_validation import validate_api_access
 
 
 
-from frappe.utils import getdate, get_time, now_datetime, nowdate
-
+from frappe.utils import getdate, get_time, nowdate, now_datetime
 
 @frappe.whitelist(allow_guest=False)
 def create_book_appointment(data):
+    """
+    Create Book Appointment
+    - Only Receptionist and Administrator are allowed
+    """
+
     validate_api_access("Book Appointment")
 
-
-    
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        # ----------------------------------
+        # ROLE CHECK
+        # ----------------------------------
+        if not ("Receptionist" in roles or "Administrator" in roles):
+            frappe.throw(
+                "You are not allowed to create Book Appointments",
+                frappe.PermissionError
+            )
+
+        # ----------------------------------
+        # PARSE JSON
+        # ----------------------------------
         data = frappe.parse_json(data)
 
         # ---------------------------
@@ -30,15 +47,13 @@ def create_book_appointment(data):
 
         appointment_date = data.get("appointment_date")
         appointment_time = data.get("appointment_time")
-        description = data.get("description") 
-        
-        # Pickup logic fields
+        description = data.get("description")
+
         vehicle_pickup_required = data.get("vehicle_pickup_required")
         pickup_address = data.get("pickup_address")
-        same_as_pick_up_address = data.get("same_as_pick_up_address")  # 0 or 1
+        same_as_pick_up_address = data.get("same_as_pick_up_address")
         drop_address = data.get("drop_address")
-        assigned_to =data.get("assigned_to")
-        
+        assigned_to = data.get("assigned_to")
 
         # ---------------------------
         #   STRICT DATE VALIDATION
@@ -52,7 +67,6 @@ def create_book_appointment(data):
         appointment_date = getdate(appointment_date)
         today = getdate(nowdate())
 
-        # ❌ BACK DATE NOT ALLOWED
         if appointment_date < today:
             return {
                 "status": "error",
@@ -60,7 +74,7 @@ def create_book_appointment(data):
             }
 
         # ---------------------------
-        #   TIME VALIDATION (TODAY ONLY)
+        #   TIME VALIDATION
         # ---------------------------
         if appointment_date == today:
             if not appointment_time:
@@ -71,12 +85,6 @@ def create_book_appointment(data):
 
             appointment_time = get_time(appointment_time)
             current_time = now_datetime().time()
-
-            # if appointment_time <= current_time:
-            #     return {
-            #         "status": "error",
-            #         "message": "Please select a future time"
-            #     }
 
         # ---------------------------
         #   AUTO CREATE MASTERS
@@ -135,7 +143,10 @@ def create_book_appointment(data):
         # ----------------------------------------
         #   PICKUP / DROP LOGIC
         # ----------------------------------------
-        if vehicle_pickup_required == "Yes, Pickup my vehicle" and same_as_pick_up_address == 1:
+        if (
+            vehicle_pickup_required == "Yes, Pickup my vehicle"
+            and same_as_pick_up_address == 1
+        ):
             drop_address = pickup_address
 
         # ---------------------------
@@ -157,22 +168,29 @@ def create_book_appointment(data):
             "same_as_pick_up_address": same_as_pick_up_address,
             "drop_address": drop_address,
             "status": "Open",
-            "description":description,
-            "assigned_to":assigned_to
+            "description": description,
+            "assigned_to": assigned_to
         })
 
         appointment.insert(ignore_permissions=True)
         frappe.db.commit()
         frappe.clear_messages()
+
         return {
             "status": "success",
-            "status_code":200,
+            "status_code": 200,
             "message": "Appointment booked successfully",
             "appointment_id": appointment.name
         }
 
+    except frappe.PermissionError:
+        raise
+
     except Exception as e:
-        frappe.log_error(str(e), "Create Appointment Error")
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Create Appointment Error"
+        )
         return {
             "status": "error",
             "message": str(e)
@@ -182,15 +200,35 @@ def create_book_appointment(data):
 
 
 
+
+
 @frappe.whitelist(allow_guest=False)
 def confirm_book_appointment(appointment_name):
     """
     Confirm a Book Appointment
+    Only Receptionist or Administrator can confirm
     """
 
     validate_api_access("Book Appointment")
 
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        # ----------------------------------
+        # ROLE CHECK
+        # ----------------------------------
+        allowed_roles = ["Receptionist", "Administrator"]
+
+        if not any(role in roles for role in allowed_roles):
+            frappe.throw(
+                "You are not allowed to confirm appointments",
+                frappe.PermissionError
+            )
+
+        # ----------------------------------
+        # FETCH APPOINTMENT
+        # ----------------------------------
         appointment = frappe.get_doc("Book Appointment", appointment_name)
 
         # Prevent reconfirm
@@ -201,10 +239,13 @@ def confirm_book_appointment(appointment_name):
                 "appointment": appointment.name
             }
 
-        # Optional: prevent confirming cancelled appointments
+        # Prevent confirming cancelled appointment
         if appointment.status == "Cancelled":
             frappe.throw("Cancelled appointment cannot be confirmed")
 
+        # ----------------------------------
+        # CONFIRM APPOINTMENT
+        # ----------------------------------
         appointment.status = "Confirmed"
         appointment.save(ignore_permissions=True)
 
@@ -236,51 +277,76 @@ def confirm_book_appointment(appointment_name):
 
 
 
-
-
-
-
-
-
 from frappe.utils import getdate, nowdate
 
 @frappe.whitelist(allow_guest=False)
 def create_car_repair_request(appointment_name, status=None):
-    validate_api_access("Book Appointment")
     """
-    Create a Car Repair Request from a Book Appointment
+    Create Car Repair Request from Book Appointment
+    Permission:
+    - Employee: only assigned appointment
+    - Receptionist / Administrator: all
+    - Adviser: not allowed
     """
 
+    validate_api_access("Book Appointment")
+
     try:
-        # ---------------------------
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        is_admin = "Administrator" in roles
+        is_receptionist = "Receptionist" in roles
+        is_employee = "Employee" in roles
+
+        # ----------------------------------
+        # BLOCK ADVISER
+        # ----------------------------------
+        if "Adviser" in roles and not (is_admin or is_receptionist):
+            frappe.throw(
+                "Adviser is not allowed to create Car Repair Request",
+                frappe.PermissionError
+            )
+
+        # ----------------------------------
         # FETCH APPOINTMENT
-        # ---------------------------
+        # ----------------------------------
         appointment = frappe.get_doc("Book Appointment", appointment_name)
+
+        # ----------------------------------
+        # EMPLOYEE ASSIGNMENT CHECK
+        # ----------------------------------
+        if is_employee and not (is_admin or is_receptionist):
+            employee = frappe.db.get_value(
+                "Employee",
+                {"user_id": user},
+                "name"
+            )
+
+            if not employee:
+                frappe.throw(
+                    "Employee not linked with this user",
+                    frappe.PermissionError
+                )
+
+            if appointment.assigned_to != employee:
+                frappe.throw(
+                    "You can only create Car Repair Request for appointments assigned to you",
+                    frappe.PermissionError
+                )
 
         # ---------------------------
         # OPTIONAL STATUS UPDATE FROM JSON
         # ---------------------------
         if status:
             if status != "Confirmed":
-                frappe.throw("Only 'Confirmed' status is allowed to create Car Repair Request")
+                frappe.throw(
+                    "Only 'Confirmed' status is allowed to create Car Repair Request"
+                )
 
-            # appointment.status = status
-            # appointment.save(ignore_permissions=True)
             if appointment.status != "Confirmed":
                 appointment.status = "Confirmed"
                 appointment.save(ignore_permissions=True)
-
-
-        # ---------------------------
-        # AUTO-CANCEL BACKDATED APPOINTMENT
-        # ---------------------------
-        # if appointment.appointment_date and getdate(appointment.appointment_date) < getdate(nowdate()):
-        #     appointment.status = "Cancelled"
-        #     appointment.save(ignore_permissions=True)
-
-        #     frappe.throw(
-        #         "Appointment date is in the past. Appointment has been automatically Cancelled."
-        #     )
 
         # ---------------------------
         # STATUS VALIDATION
@@ -297,9 +363,9 @@ def create_car_repair_request(appointment_name, status=None):
             "Car Repair Request",
             {"appointment": appointment.name}
         )
+
         if existing_request:
             frappe.clear_messages()
-
             return {
                 "status": "exists",
                 "message": "Car Repair Request already exists",
@@ -340,7 +406,7 @@ def create_car_repair_request(appointment_name, status=None):
         })
 
         # ---------------------------
-        # OPTIONAL MEDIA FIELDS
+        # OPTIONAL MEDIA
         # ---------------------------
         if getattr(appointment, "odometer_photo", None):
             repair.odometer_photo = appointment.odometer_photo
@@ -352,15 +418,11 @@ def create_car_repair_request(appointment_name, status=None):
                 })
 
         # ---------------------------
-        # INSERT DOCUMENT
+        # SAVE REQUEST
         # ---------------------------
         repair.flags.ignore_mandatory = True
         repair.save(ignore_permissions=True)
 
-        # ---------------------------
-        # UPDATE APPOINTMENT STATUS TO COMPLETE
-        # ---------------------------
-        # appointment.status = "Complete"
         appointment.save(ignore_permissions=True)
         frappe.clear_messages()
 
@@ -371,12 +433,16 @@ def create_car_repair_request(appointment_name, status=None):
             "car_repair_request": repair.name
         }
 
+    except frappe.PermissionError:
+        raise
+
     except Exception as e:
         frappe.log_error(
             message=frappe.get_traceback(),
             title="Create Car Repair Request Error"
         )
         frappe.throw(str(e))
+
 
 
 
@@ -435,42 +501,60 @@ def get_appointment_list(search=None, status=None):
 @frappe.whitelist(allow_guest=False)
 def get_book_appointments(search=None, status=None):
     """
-    Returns list of Book Appointment records.
-    - Employees see only appointments assigned to them
-    - Receptionist/other roles see all appointments
-    Optional filters:
-        - status: Open, Confirmed, Complete, Cancelled
-        - search: partial match on name, customer_name, phone, license_plate
+    Role rules:
+    - Employee: only assigned appointments
+    - Receptionist / Administrator: all
+    - Adviser: no access
     """
+
+    validate_api_access("Book Appointment")
 
     try:
         user = frappe.session.user
         roles = frappe.get_roles(user)
-        print("User:", user)
-        print("Roles:", roles)
+
+        # ----------------------------------
+        # BLOCK ADVISER
+        # ----------------------------------
+        if "Advisor" in roles and not (
+            "Receptionist" in roles or "Administrator" in roles
+        ):
+            frappe.throw(
+                "You are not allowed to view Book Appointments",
+                frappe.PermissionError
+            )
 
         filters = {}
 
-        # -------------------------
+        # ----------------------------------
         # STATUS FILTER
-        # -------------------------
+        # ----------------------------------
         if status:
             filters["status"] = status
 
-        # -------------------------
+        # ----------------------------------
         # ROLE-BASED FILTER
-        # -------------------------
-        if "Employee" in roles:
-            # Get linked Employee record
-            employee = frappe.db.get_value("Employee", {"user_id": user}, ["name"], as_dict=True)
-            if employee:
-                filters["assigned_to"] = employee.name
-            # If no linked Employee, just don’t filter assigned_to
-            # This avoids errors for admins or unlinked users
+        # ----------------------------------
+        if "Employee" in roles and not (
+            "Receptionist" in roles or "Administrator" in roles
+        ):
+            employee = frappe.db.get_value(
+                "Employee",
+                {"user_id": user},
+                "name"
+            )
 
-        # -------------------------
+            if not employee:
+                frappe.throw(
+                    "Employee not linked with this user",
+                    frappe.PermissionError
+                )
+
+            filters["assigned_to"] = employee
+
+        # ----------------------------------
         # FETCH DATA
-        # -------------------------
+        # ----------------------------------
         appointments = frappe.get_all(
             "Book Appointment",
             filters=filters,
@@ -482,9 +566,9 @@ def get_book_appointments(search=None, status=None):
             ]
         )
 
-        # -------------------------
+        # ----------------------------------
         # SEARCH FILTER
-        # -------------------------
+        # ----------------------------------
         if search:
             search_lower = search.lower()
             appointments = [
@@ -495,40 +579,67 @@ def get_book_appointments(search=None, status=None):
                 or search_lower in (appt.get("license_plate") or "").lower()
             ]
 
-        return appointments  # returns plain list, like get_appointment_list
+        return appointments
+
+    except frappe.PermissionError:
+        raise
 
     except Exception as e:
-        frappe.log_error(message=str(e), title="Fetch Book Appointments Error")
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Fetch Book Appointments Error"
+        )
         return {"status": "error", "message": str(e)}
-
-
-
 
 # ----------------------------------------------------------------------------
 # ...................Get Single Book Appointement Id..........................
 # ----------------------------------------------------------------------------
 
+
+
 @frappe.whitelist(allow_guest=False)
 def get_book_appointment(appointment_id):
+    """
+    Get a single Book Appointment by ID
+    Only the assigned employee can view it
+    """
     validate_api_access("Book Appointment")
-   
-    """
-    Get a single Book Appointment by ID,
-    including make and model details.
-    """
+
     try:
-        doc = frappe.get_doc("Book Appointment", appointment_id)
-        
         user = frappe.session.user
-        user_roles = frappe.get_roles(user)
 
-        if "Employee" in user_roles:
-            if doc.assigned_to != user:
-                frappe.throw(
-                    _("You can only view your own Book Appointments"),
-                    frappe.PermissionError
-                )
+        # --------------------------------
+        # GET EMPLOYEE FROM USER
+        # --------------------------------
+        employee = frappe.db.get_value(
+            "Employee",
+            {"user_id": user},
+            "name"
+        )
 
+        if not employee:
+            frappe.throw(
+                _("Employee not found for this user"),
+                frappe.PermissionError
+            )
+
+        # --------------------------------
+        # FETCH APPOINTMENT
+        # --------------------------------
+        doc = frappe.get_doc("Book Appointment", appointment_id)
+
+        # --------------------------------
+        # PERMISSION CHECK
+        # --------------------------------
+        if doc.assigned_to != employee:
+            frappe.throw(
+                _("You can only view appointments assigned to you"),
+                frappe.PermissionError
+            )
+
+        # --------------------------------
+        # RESPONSE DATA
+        # --------------------------------
         data = {
             "name": doc.name,
             "customer_name": doc.customer_name,
@@ -541,22 +652,34 @@ def get_book_appointment(appointment_id):
             "appointment_date": doc.appointment_date,
             "appointment_time": doc.appointment_time,
             "vehicle_pickup_required": doc.vehicle_pickup_required,
-            "pickup_address": doc.pickup_address, 
-            "same_as_pick_up_address":doc.same_as_pick_up_address,
-            "drop_address":doc.drop_address,
-            "assigned_to":doc.assigned_to,
+            "pickup_address": doc.pickup_address,
+            "same_as_pick_up_address": doc.same_as_pick_up_address,
+            "drop_address": doc.drop_address,
+            "assigned_to": doc.assigned_to,
             "status": doc.status,
+            "description": doc.description,
             "creation": doc.creation,
             "modified": doc.modified
         }
+
         frappe.clear_messages()
-        return {"status": "success", 
-                "status_code":200,
-                "data": data}
+        return {
+            "status": "success",
+            "status_code": 200,
+            "data": data
+        }
 
     except Exception as e:
-        frappe.log_error(message=str(e), title="Get Appointment Error")
-        return {"status": "error", "message": str(e)}
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Get Book Appointment Error"
+        )
+        return {
+            "status": "error",
+            "status_code": 500,
+            "message": str(e)
+        }
+
 
 
 
@@ -570,59 +693,100 @@ from frappe.utils import getdate, get_time
 
 @frappe.whitelist(allow_guest=False)
 def update_book_appointment(data):
+    """
+    Update Book Appointment
+    - Only Receptionist and Administrator are allowed
+    """
+
     validate_api_access("Book Appointment")
-    # import frappe
-    # from frappe.utils import getdate, get_time
 
     try:
-        # Parse JSON payload
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        # ----------------------------------
+        # ROLE CHECK
+        # ----------------------------------
+        if not ("Receptionist" in roles or "Administrator" in roles):
+            frappe.throw(
+                "You are not allowed to update Book Appointments",
+                frappe.PermissionError
+            )
+
+        # ----------------------------------
+        # PARSE JSON PAYLOAD
+        # ----------------------------------
         data = frappe.parse_json(data)
 
-        # Extract appointment_id
         appointment_id = data.pop("appointment_id", None)
         if not appointment_id:
-            return {"status": "error", "message": "appointment_id is required"}
+            return {
+                "status": "error",
+                "message": "appointment_id is required"
+            }
 
-        # Clean appointment_id
         appointment_id = str(appointment_id).strip().strip("'").strip('"')
 
-        # Check if appointment exists
+        # ----------------------------------
+        # CHECK EXISTENCE
+        # ----------------------------------
         if not frappe.db.exists("Book Appointment", appointment_id):
-            return {"status": "error", "message": f"Book Appointment {appointment_id} not found"}
+            return {
+                "status": "error",
+                "message": f"Book Appointment {appointment_id} not found"
+            }
 
-        # Parse and validate appointment_date
+        # ----------------------------------
+        # DATE / TIME VALIDATION
+        # ----------------------------------
         if "appointment_date" in data:
             try:
                 data["appointment_date"] = getdate(data["appointment_date"])
             except Exception:
-                return {"status": "error", "message": "Invalid appointment_date format. Use YYYY-MM-DD"}
+                return {
+                    "status": "error",
+                    "message": "Invalid appointment_date format. Use YYYY-MM-DD"
+                }
 
-        # Parse and validate appointment_time
         if "appointment_time" in data:
             try:
                 data["appointment_time"] = get_time(data["appointment_time"])
             except Exception:
-                return {"status": "error", "message": "Invalid appointment_time format. Use HH:MM"}
+                return {
+                    "status": "error",
+                    "message": "Invalid appointment_time format. Use HH:MM"
+                }
 
-        # Get and update the document
+        # ----------------------------------
+        # UPDATE DOCUMENT
+        # ----------------------------------
         doc = frappe.get_doc("Book Appointment", appointment_id)
         doc.update(data)
-        
         doc.save(ignore_permissions=True)
+
         frappe.db.commit()
         frappe.clear_messages()
+
         return {
             "status": "success",
+            "status_code": 200,
             "message": "Appointment updated successfully",
             "appointment_id": doc.name,
             "updated_fields": data
         }
 
+    except frappe.PermissionError:
+        raise
+
     except Exception as e:
-        frappe.log_error(message=str(e), title="Update Appointment Error")
-        return {"status": "error", "message": str(e)}
-
-
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Update Appointment Error"
+        )
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 
@@ -631,74 +795,162 @@ def update_book_appointment(data):
 # ------------------------------------------------------------------
 @frappe.whitelist(allow_guest=False)
 def delete_book_appointment(appointment_id):
-   
     """
-    Delete a Book Appointment by ID.
-    Example:
-    {
-        "appointment_id": "ad6ih2j92g"
-    }
+    Delete a Book Appointment
+    Only Receptionist or Administrator can delete
     """
+
+    validate_api_access("Book Appointment")
+
     try:
-        # Check if the appointment exists
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        # ----------------------------------
+        # ROLE CHECK
+        # ----------------------------------
+        allowed_roles = ["Receptionist", "Administrator"]
+
+        if not any(role in roles for role in allowed_roles):
+            frappe.throw(
+                "You are not allowed to delete Book Appointments",
+                frappe.PermissionError
+            )
+
+        # ----------------------------------
+        # CHECK EXISTENCE
+        # ----------------------------------
         if not frappe.db.exists("Book Appointment", appointment_id):
             return {
                 "status": "error",
+                "status_code": 404,
                 "message": f"Book Appointment '{appointment_id}' not found"
             }
 
-        # Delete the record
-        frappe.delete_doc("Book Appointment", appointment_id, ignore_permissions=True)
+        # ----------------------------------
+        # DELETE DOCUMENT
+        # ----------------------------------
+        frappe.delete_doc(
+            "Book Appointment",
+            appointment_id,
+            ignore_permissions=True
+        )
+
         frappe.db.commit()
 
         return {
             "status": "success",
+            "status_code": 200,
             "message": f"Appointment '{appointment_id}' deleted successfully"
         }
 
+    except frappe.PermissionError:
+        # PermissionError already handled by frappe.throw
+        raise
+
     except Exception as e:
-        frappe.log_error(message=str(e), title="Delete Appointment Error")
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Delete Book Appointment Error"
+        )
         return {
             "status": "error",
+            "status_code": 500,
             "message": str(e)
         }
 
 
 
 
-
-
-
 @frappe.whitelist(allow_guest=False)
 def cancel_book_appointment(appointment_name):
+    """
+    Cancel Book Appointment
+    - Employee: only their assigned appointment
+    - Receptionist / Administrator: all
+    - Assigned Adviser: not allowed
+    """
+
+    validate_api_access("Book Appointment")
+
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        is_admin = "Administrator" in roles
+        is_receptionist = "Receptionist" in roles
+        is_employee = "Employee" in roles
+
+        # ----------------------------------
+        # GET EMPLOYEE LINKED TO USER
+        # ----------------------------------
+        employee = frappe.db.get_value(
+            "Employee",
+            {"user_id": user},
+            "name"
+        )
+
+        # ----------------------------------
+        # FETCH APPOINTMENT
+        # ----------------------------------
         appointment = frappe.get_doc("Book Appointment", appointment_name)
 
-        # Prevent cancelling completed appointments
+        # ----------------------------------
+        # PERMISSION LOGIC
+        # ----------------------------------
+
+        # Receptionist & Admin → full access
+        if not (is_admin or is_receptionist):
+
+            # Employee must exist
+            if not employee:
+                frappe.throw(
+                    "Employee not linked with this user",
+                    frappe.PermissionError
+                )
+
+            # Employee can cancel ONLY if assigned
+            if appointment.assigned_to != employee:
+                frappe.throw(
+                    "You can only cancel appointments assigned to you",
+                    frappe.PermissionError
+                )
+
+        # ----------------------------------
+        # STATUS VALIDATION
+        # ----------------------------------
         if appointment.status == "Complete":
             frappe.throw("Completed appointment cannot be cancelled")
 
-        # Allow cancellation from Open or Confirmed
-        if appointment.status in ["Open", "Confirmed"]:
-            appointment.status = "Cancelled"
-            appointment.save(ignore_permissions=True)
-            frappe.clear_messages()
-            return {
-                "status": "success",
-                "status_code":201,
-                "message": "Appointment cancelled successfully",
-                "appointment_id": appointment.name
-            }
+        if appointment.status not in ["Open", "Confirmed"]:
+            frappe.throw(
+                f"Appointment cannot be cancelled from status {appointment.status}"
+            )
 
-        frappe.throw(f"Appointment cannot be cancelled from status {appointment.status}")
+        # ----------------------------------
+        # CANCEL APPOINTMENT
+        # ----------------------------------
+        appointment.status = "Cancelled"
+        appointment.save(ignore_permissions=True)
+
+        frappe.clear_messages()
+
+        return {
+            "status": "success",
+            "status_code": 200,
+            "message": "Appointment cancelled successfully",
+            "appointment_id": appointment.name
+        }
+
+    except frappe.PermissionError:
+        raise
 
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Cancel Book Appointment Error")
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Cancel Book Appointment Error"
+        )
         frappe.throw(str(e))
-
-
-
-
 
 
 
