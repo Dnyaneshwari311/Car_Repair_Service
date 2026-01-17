@@ -13,6 +13,7 @@ from frappe.utils import getdate, get_time, now_datetime, nowdate
 def create_book_appointment(data):
     validate_api_access("Book Appointment")
 
+
     
     try:
         data = frappe.parse_json(data)
@@ -354,7 +355,7 @@ def create_car_repair_request(appointment_name, status=None):
         # INSERT DOCUMENT
         # ---------------------------
         repair.flags.ignore_mandatory = True
-        repair.insert(ignore_permissions=True)
+        repair.save(ignore_permissions=True)
 
         # ---------------------------
         # UPDATE APPOINTMENT STATUS TO COMPLETE
@@ -381,101 +382,127 @@ def create_car_repair_request(appointment_name, status=None):
 
 
 
+@frappe.whitelist()
+def get_appointment_list(search=None, status=None):
+    """
+    Returns list of items which have variants (has_variants = 1)
+    Permission is automatically applied based on logged-in user
+    """
+    print("request params::::::::::::",search, status)
+    user = frappe.session.user
+    print("user ..",user)
+    employee = frappe.db.get_value(
+    "Employee",
+    {"user_id": frappe.session.user},
+    ["name", "employee_name", "designation"],
+    as_dict=True
+)
+    print("employee ...",employee)
+
+    filters = {
+        "status": status,
+        "assigned_to":employee.name
+    }
+    print("filter object::::::::::::", filters)
+
+    # Optional search by item code or name
+    # if search:
+    appointment_list = frappe.get_all(
+        "Book Appointment",
+        filters=filters,
+        fields=["name", "customer_name", "email", "phone","status","license_plate","make","model","service_type","appointment_date","appointment_time",
+                "vehicle_pickup_required","pickup_address","assigned_to","drop_address","status","description"],
+        
+        # limit_page_length=limit
+    )
+    
+    print("appointment_list:::::::::::::", appointment_list)
+    return appointment_list
+
+    # return frappe.get_list(
+    #     "Book Appointment",
+    #     filters=filters,
+    #     fields=["name", "customer_name", "email", "phone", "status"],
+    #     # limit_page_length=limit
+    # )
+
+
+
+
+
+
 
 @frappe.whitelist(allow_guest=False)
-def get_book_appointments(page=1, page_size=10, status=None, search=None):
-    validate_api_access("Book Appointment")
+def get_book_appointments(search=None, status=None):
+    """
+    Returns list of Book Appointment records.
+    - Employees see only appointments assigned to them
+    - Receptionist/other roles see all appointments
+    Optional filters:
+        - status: Open, Confirmed, Complete, Cancelled
+        - search: partial match on name, customer_name, phone, license_plate
+    """
 
     try:
-        page = int(page)
-        page_size = int(page_size)
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+        print("User:", user)
+        print("Roles:", roles)
+
+        filters = {}
 
         # -------------------------
-        # BASE CONDITIONS
+        # STATUS FILTER
         # -------------------------
-        conditions = []
-        values = {}
-
         if status:
-            conditions.append("status = %(status)s")
-            values["status"] = status
+            filters["status"] = status
 
+        # -------------------------
+        # ROLE-BASED FILTER
+        # -------------------------
+        if "Employee" in roles:
+            # Get linked Employee record
+            employee = frappe.db.get_value("Employee", {"user_id": user}, ["name"], as_dict=True)
+            if employee:
+                filters["assigned_to"] = employee.name
+            # If no linked Employee, just don’t filter assigned_to
+            # This avoids errors for admins or unlinked users
+
+        # -------------------------
+        # FETCH DATA
+        # -------------------------
+        appointments = frappe.get_all(
+            "Book Appointment",
+            filters=filters,
+            fields=[
+                "name", "customer_name", "email", "phone", "license_plate",
+                "make", "model", "service_type", "appointment_date", "appointment_time",
+                "vehicle_pickup_required", "pickup_address", "assigned_to",
+                "drop_address", "status", "description", "creation", "modified"
+            ]
+        )
+
+        # -------------------------
+        # SEARCH FILTER
+        # -------------------------
         if search:
-            conditions.append("""
-                (
-                    name LIKE %(search)s OR
-                    customer_name LIKE %(search)s OR
-                    phone LIKE %(search)s OR
-                    license_plate LIKE %(search)s
-                )
-            """)
-            values["search"] = f"%{search}%"
+            search_lower = search.lower()
+            appointments = [
+                appt for appt in appointments
+                if search_lower in (appt.get("name") or "").lower()
+                or search_lower in (appt.get("customer_name") or "").lower()
+                or search_lower in (appt.get("phone") or "").lower()
+                or search_lower in (appt.get("license_plate") or "").lower()
+            ]
 
-        where_clause = " AND ".join(conditions)
-        if where_clause:
-            where_clause = "WHERE " + where_clause
-
-        # -------------------------
-        # DATA QUERY
-        # -------------------------
-        data = frappe.db.sql(f"""
-            SELECT
-                name,
-                customer_name,
-                email,
-                phone,
-                license_plate,
-                make,
-                model,
-                service_type,
-                appointment_date,
-                appointment_time,
-                vehicle_pickup_required,
-                pickup_address,
-                drop_address,
-                status,
-                description,
-                creation,
-                modified
-            FROM `tabBook Appointment`
-            {where_clause}
-            ORDER BY creation DESC
-            LIMIT %(start)s, %(page_size)s
-        """, {
-            **values,
-            "start": (page - 1) * page_size,
-            "page_size": page_size
-        }, as_dict=True)
-
-        # -------------------------
-        # COUNT QUERY
-        # -------------------------
-        total_records = frappe.db.sql(f"""
-            SELECT COUNT(*)
-            FROM `tabBook Appointment`
-            {where_clause}
-        """, values)[0][0]
-
-        total_pages = (total_records + page_size - 1) // page_size
-
-        return {
-            "status": "success",
-            "filters": {
-                "status": status or "All",
-                "search": search or ""
-            },
-            "pagination": {
-                "current_page": page,
-                "page_size": page_size,
-                "total_records": total_records,
-                "total_pages": total_pages
-            },
-            "data": data
-        }
+        return appointments  # returns plain list, like get_appointment_list
 
     except Exception as e:
-        frappe.log_error(message=str(e), title="Fetch Appointments Error")
+        frappe.log_error(message=str(e), title="Fetch Book Appointments Error")
         return {"status": "error", "message": str(e)}
+
+
+
 
 # ----------------------------------------------------------------------------
 # ...................Get Single Book Appointement Id..........................
@@ -491,6 +518,17 @@ def get_book_appointment(appointment_id):
     """
     try:
         doc = frappe.get_doc("Book Appointment", appointment_id)
+        
+        user = frappe.session.user
+        user_roles = frappe.get_roles(user)
+
+        if "Employee" in user_roles:
+            if doc.assigned_to != user:
+                frappe.throw(
+                    _("You can only view your own Book Appointments"),
+                    frappe.PermissionError
+                )
+
         data = {
             "name": doc.name,
             "customer_name": doc.customer_name,

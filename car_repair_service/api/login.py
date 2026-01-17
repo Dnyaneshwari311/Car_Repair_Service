@@ -224,12 +224,28 @@ def login_and_get_token():
         return api_error(e)
 
 
+# def get_user_id_from_input(login_input):
+#     """Detect phone number and fetch corresponding user id."""
+#     if login_input.isdigit():  # If numeric, treat as phone number
+#         user = frappe.db.get_value("User", {"phone": login_input}, "name")
+#         if user:
+#             return user
+#     return login_input
+
+
 def get_user_id_from_input(login_input):
-    """Detect phone number and fetch corresponding user id."""
-    if login_input.isdigit():  # If numeric, treat as phone number
+    # Phone login
+    if login_input.isdigit():
         user = frappe.db.get_value("User", {"phone": login_input}, "name")
         if user:
             return user
+
+    # Email login
+    user = frappe.db.get_value("User", {"email": login_input}, "name")
+    if user:
+        return user
+
+    # Fallback → username
     return login_input
 
 

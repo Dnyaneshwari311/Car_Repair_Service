@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "2026-27-Make-.#####",
  "creation": "2025-10-18 18:17:29.456249",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -20,10 +21,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-04 17:06:58.884087",
+ "modified": "2026-01-15 13:55:15.926280",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Vehicle Make",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {

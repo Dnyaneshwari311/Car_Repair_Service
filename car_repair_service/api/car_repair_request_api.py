@@ -1062,3 +1062,30 @@ def delete_car_repair_request(name):
             "status": "error",
             "message": f"Internal Server Error: {str(e)}"
         }
+
+
+
+
+
+
+
+
+
+
+@frappe.whitelist(allow_guest=False)
+def submit_car_repair_request(name):
+    validate_api_access("Car Repair Request")
+
+    repair = frappe.get_doc("Car Repair Request", name)
+
+    if repair.docstatus != 0:
+        frappe.throw("Only Draft documents can be submitted")
+
+    # Let ERP handle mandatory + validation
+    repair.submit()
+
+    return {
+        "status": "success",
+        "message": "Car Repair Request submitted successfully",
+        "docstatus": repair.docstatus
+    }
