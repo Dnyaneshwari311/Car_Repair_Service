@@ -306,7 +306,178 @@ def delete_car_diagnosis(name):
 
 
 
+# from urllib.parse import urljoin
+
+# @frappe.whitelist(allow_guest=False)
+# def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", sort_order="desc", is_pagination=False, **kwargs):
+#     validate_api_access("Car Diagnosis")
+    
+#     try:
+#         is_pagination = frappe.utils.sbool(is_pagination)
+#         base_url = frappe.request.host_url.rstrip("/") + frappe.request.path
+#         del kwargs["cmd"]
+
+#         # 🔹 searchable fields
+#         search_fields = ["customer_name", "license_plate", "car", "reference_no"]
+
+#         # 🔹 fields to return from parent
+#         update_fields = [
+#             "name", "customer_name", "license_plate", "phone", "email_id", "priority",
+#             "reference_no", "estimated_delivery_date", "estimated_delivery_time",
+#             "creation", "modified", "customer_signature","docstatus"
+#         ]
+
+#         # 🔹 filters
+#         filters = {}
+#         if kwargs.get("priority"):
+#             filters["priority"] = kwargs.get("priority")
+#         if kwargs.get("vehicle_pick_up"):
+#             filters["vehicle_pick_up"] = kwargs.get("vehicle_pick_up")
+
+#         # 🔹 search condition
+#         search_condition = ""
+#         if search:
+#             search_condition = " OR ".join(
+#                 [f"{field} LIKE %(search)s" for field in search_fields]
+#             )
+
+#         # 🔹 build main query
+#         query = f"""
+#             SELECT {", ".join(update_fields)}
+#             FROM `tabCar Diagnosis`
+#             WHERE 1=1
+#         """
+
+#         if filters:
+#             for key, value in filters.items():
+#                 if isinstance(value, list):
+#                     query += f" AND `{key}` IN %({key})s"
+#                 else:
+#                     query += f" AND `{key}`=%({key})s"
+
+#         if search_condition:
+#             query += f" AND ({search_condition})"
+
+#         query += f" ORDER BY `{sort_by}` {sort_order.upper()}"
+
+#         # 🔹 pagination
+#         if is_pagination:
+#             offset = (int(page) - 1) * int(page_size)
+#             query += f" LIMIT {offset}, {int(page_size)}"
+
+#         # 🔹 execute query
+#         values = filters.copy()
+#         if search:
+#             values["search"] = f"%{search}%"
+
+#         data = frappe.db.sql(query, values, as_dict=True)
+
+#         host_url = frappe.request.host_url.rstrip("/")
+
+#         image_fields = ["customer_signature"]
+
+#         # ---------------------------------------------------------------------
+#         # 🔹 ATTACH CHILD TABLE DATA
+#         # ---------------------------------------------------------------------
+#         for d in data:
+#             name = d.get("name")
+
+#             # 1️⃣ Vehicle Concern Table
+#             d["vehicle_concern"] = frappe.db.get_all(
+#                 "Vehicle Concern",
+#                 filters={"parent": name},
+#                 fields=["vehicle_concern"]
+#             )
+
+#             # 2️⃣ Car Repair Images Table
+#             images = frappe.db.get_all(
+#                 "Car Repair Images",
+#                 filters={"parent": name},
+#                 fields=["image"]
+#             )
+#             for img in images:
+#                 if img.get("image"):
+#                     img["image"] = urljoin(host_url, img["image"])
+#             d["car_repair_images"] = images
+
+#             # # 3️⃣ Car Diagnosis Detail Table (UPDATED FIELDS)
+#             # diagnosis_details = frappe.db.get_all(
+#             #     "Car Repair Damage",
+#             #     filters={"parent": name},
+#             #     fields=[
+#             #         "damage_description",
+#             #         "part_required",
+#             #         "quantity",
+#             #         "estimated_cost",
+#             #         "assigned_to"
+#             #     ]
+#             # )
+#             # d["diagnosis_details"] = diagnosis_details
+            
+            
+                        
+#             # 3️⃣ Car Diagnosis Detail Table (WITH AMOUNT)
+#             diagnosis_details = frappe.db.get_all(
+#                 "Car Repair Damage",
+#                 filters={"parent": name},
+#                 fields=[
+#                     "damage_description",
+#                     "part_required",
+#                     "quantity",
+#                     "estimated_cost",
+#                     "amount",
+#                     "assigned_to"
+#                 ]
+#             )
+
+#             # Safety fallback (if old records exist)
+#             for row in diagnosis_details:
+#                 qty = frappe.utils.flt(row.get("quantity"))
+#                 cost = frappe.utils.flt(row.get("estimated_cost"))
+#                 if not row.get("amount"):
+#                     row["amount"] = qty * cost if qty > 0 and cost > 0 else 0
+
+#             d["diagnosis_details"] = diagnosis_details
+
+
+#             # 4️⃣ full URL for parent images
+#             for f in image_fields:
+#                 if d.get(f):
+#                     d[f] = urljoin(host_url, d[f])
+
+#         # 🔹 total count
+#         total_count = frappe.db.count("Car Diagnosis", filters=filters)
+
+#         # 🔹 pagination metadata
+#         meta = {}
+#         if is_pagination:
+#             meta = {
+#                 "page": int(page),
+#                 "page_size": int(page_size),
+#                 "total_records": total_count,
+#                 "total_pages": (total_count // int(page_size)) + (1 if total_count % int(page_size) else 0),
+#                 "next_page": int(page) + 1 if total_count > int(page) * int(page_size) else None,
+#                 "previous_page": int(page) - 1 if int(page) > 1 else None,
+#                 "base_url": base_url
+#             }
+
+#         return {
+#             "status": "success",
+#             "status_code": 200,
+#             "data": data,
+#             "pagination": meta if is_pagination else None
+#         }
+
+#     except Exception as e:
+#         frappe.log_error("Car Diagnosis List Error", frappe.get_traceback())
+#         return {"status": "error", "message": str(e)}
+
+
+
+
+
 from urllib.parse import urljoin
+import frappe
 
 @frappe.whitelist(allow_guest=False)
 def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", sort_order="desc", is_pagination=False, **kwargs):
@@ -324,21 +495,28 @@ def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", so
         update_fields = [
             "name", "customer_name", "license_plate", "phone", "email_id", "priority",
             "reference_no", "estimated_delivery_date", "estimated_delivery_time",
-            "creation", "modified", "customer_signature"
+            "creation", "modified", "customer_signature", "docstatus"
         ]
 
         # 🔹 filters
         filters = {}
-        if kwargs.get("priority"):
-            filters["priority"] = kwargs.get("priority")
-        if kwargs.get("vehicle_pick_up"):
-            filters["vehicle_pick_up"] = kwargs.get("vehicle_pick_up")
+        # standard filters
+        for key in ["priority", "vehicle_pick_up", "docstatus"]:
+            if kwargs.get(key) is not None:
+                if key == "docstatus":
+                    # convert to integer
+                    try:
+                        filters[key] = int(kwargs[key])
+                    except ValueError:
+                        filters[key] = 0
+                else:
+                    filters[key] = kwargs[key]
 
         # 🔹 search condition
         search_condition = ""
         if search:
             search_condition = " OR ".join(
-                [f"{field} LIKE %(search)s" for field in search_fields]
+                [f"`{field}` LIKE %(search)s" for field in search_fields]
             )
 
         # 🔹 build main query
@@ -348,6 +526,7 @@ def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", so
             WHERE 1=1
         """
 
+        # apply filters
         if filters:
             for key, value in filters.items():
                 if isinstance(value, list):
@@ -373,7 +552,6 @@ def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", so
         data = frappe.db.sql(query, values, as_dict=True)
 
         host_url = frappe.request.host_url.rstrip("/")
-
         image_fields = ["customer_signature"]
 
         # ---------------------------------------------------------------------
@@ -400,22 +578,6 @@ def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", so
                     img["image"] = urljoin(host_url, img["image"])
             d["car_repair_images"] = images
 
-            # # 3️⃣ Car Diagnosis Detail Table (UPDATED FIELDS)
-            # diagnosis_details = frappe.db.get_all(
-            #     "Car Repair Damage",
-            #     filters={"parent": name},
-            #     fields=[
-            #         "damage_description",
-            #         "part_required",
-            #         "quantity",
-            #         "estimated_cost",
-            #         "assigned_to"
-            #     ]
-            # )
-            # d["diagnosis_details"] = diagnosis_details
-            
-            
-                        
             # 3️⃣ Car Diagnosis Detail Table (WITH AMOUNT)
             diagnosis_details = frappe.db.get_all(
                 "Car Repair Damage",
@@ -438,7 +600,6 @@ def car_diagnosis_list(page=1, page_size=10, search=None, sort_by="creation", so
                     row["amount"] = qty * cost if qty > 0 and cost > 0 else 0
 
             d["diagnosis_details"] = diagnosis_details
-
 
             # 4️⃣ full URL for parent images
             for f in image_fields:

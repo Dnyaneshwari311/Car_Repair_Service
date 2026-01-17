@@ -31,7 +31,8 @@
   "car_diagnosis_detail",
   "customer_signature",
   "signature",
-  "remark"
+  "remark",
+  "amended_from"
  ],
  "fields": [
   {
@@ -186,12 +187,23 @@
    "fieldtype": "Attach",
    "in_list_view": 1,
    "label": "Signature"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Car Diagnosis",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-01-13 15:27:55.627858",
+ "modified": "2026-01-17 11:50:28.015444",
  "modified_by": "Administrator",
  "module": "Car Repair service",
  "name": "Car Diagnosis",
