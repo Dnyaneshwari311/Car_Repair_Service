@@ -1,33 +1,5 @@
-# import frappe
-
-# @frappe.whitelist(methods=["GET"])
-# def get_vehicle_models():
-#     """
-#     API: Get list of Vehicle Models (Display Name Only)
-#     """
-
-#     try:
-#         models = frappe.get_all(
-#             "Vehicle Model",
-#             fields=["model"],
-#             order_by="model asc"
-#         )
-
-#         return {
-#             "status": "success",
-#             "message": "Vehicle models fetched successfully",
-#             "data": models
-#         }
-
-#     except Exception as e:
-#         frappe.log_error(frappe.get_traceback(), "Vehicle Model List API Error")
-#         return {
-#             "status": "error",
-#             "message": str(e)
-#         }
-
-
 import frappe
+from frappe import _
 
 @frappe.whitelist(methods=["GET"])
 def get_vehicle_models(
@@ -38,42 +10,109 @@ def get_vehicle_models(
     sort_by="model",
     sort_order="asc"
 ):
+    """
+    Fetch Vehicle Models with optional Make filter.
+    Supports filtering by:
+    - Vehicle Make.name (ID)
+    - Vehicle Make.make (label)
+    """
+
     try:
+        # -----------------------------
+        # PAGINATION
+        # -----------------------------
         page = int(page)
         page_size = int(page_size)
         start = (page - 1) * page_size
 
-        filters = []
+        # -----------------------------
+        # CONDITIONS
+        # -----------------------------
+        conditions = []
+        values = {}
+
+        # -----------------------------
+        # MAKE FILTER (FIXED)
+        # -----------------------------
         if make:
-            filters.append(["make", "=", make])
+            conditions.append("""
+                (
+                    vm.make = %(make)s
+                    OR vm.make IN (
+                        SELECT mk.name
+                        FROM `tabVehicle Make` mk
+                        WHERE mk.make = %(make)s
+                    )
+                )
+            """)
+            values["make"] = make
 
+        # -----------------------------
+        # SEARCH FILTER
+        # -----------------------------
         if search:
-            filters.append(["model", "like", f"%{search}%"])
+            conditions.append("vm.model LIKE %(search)s")
+            values["search"] = f"%{search}%"
 
-        # Sorting protection
+        where_clause = ""
+        if conditions:
+            where_clause = "WHERE " + " AND ".join(conditions)
+
+        # -----------------------------
+        # SORT PROTECTION
+        # -----------------------------
         if sort_by not in ["model"]:
             sort_by = "model"
-        if sort_order not in ["asc", "desc"]:
+
+        if sort_order.lower() not in ["asc", "desc"]:
             sort_order = "asc"
 
-        models = frappe.get_all(
-            "Vehicle Model",
-            filters=filters,
-            fields=["model"],
-            order_by=f"{sort_by} {sort_order}",
-            start=start,
-            page_length=page_size
+        # -----------------------------
+        # MAIN DATA QUERY
+        # -----------------------------
+        data = frappe.db.sql(
+            f"""
+            SELECT
+                vm.name,
+                vm.model,
+                vm.make AS make_id,
+                mk.make AS make_name
+            FROM `tabVehicle Model` vm
+            LEFT JOIN `tabVehicle Make` mk
+                ON mk.name = vm.make
+            {where_clause}
+            ORDER BY vm.{sort_by} {sort_order}
+            LIMIT %(start)s, %(page_size)s
+            """,
+            {
+                **values,
+                "start": start,
+                "page_size": page_size
+            },
+            as_dict=True
         )
 
-        total = frappe.db.count(
-            "Vehicle Model",
-            filters=filters
-        )
+        # -----------------------------
+        # TOTAL COUNT
+        # -----------------------------
+        total = frappe.db.sql(
+            f"""
+            SELECT COUNT(*)
+            FROM `tabVehicle Model` vm
+            LEFT JOIN `tabVehicle Make` mk
+                ON mk.name = vm.make
+            {where_clause}
+            """,
+            values
+        )[0][0]
 
+        # -----------------------------
+        # RESPONSE
+        # -----------------------------
         return {
             "status": "success",
-            "message": "Vehicle models fetched successfully",
-            "data": models,
+            "message": "Vehicle models fetched successfully" if data else "No vehicle models found",
+            "data": data,
             "pagination": {
                 "page": page,
                 "page_size": page_size,
@@ -83,9 +122,8 @@ def get_vehicle_models(
         }
 
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Vehicle Model List API Error")
+        frappe.log_error(frappe.get_traceback(), "Vehicle Model API Error")
         return {
             "status": "error",
             "message": str(e)
         }
-
