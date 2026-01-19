@@ -243,6 +243,8 @@ def update_car_diagnosis(name=None, data=None):
 
         # ✅ Save document
         doc.save(ignore_permissions=True)
+        if doc.docstatus == 0:
+          doc.submit()
         frappe.db.commit()
 
         frappe.clear_messages()
