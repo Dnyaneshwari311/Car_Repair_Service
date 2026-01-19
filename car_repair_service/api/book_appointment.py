@@ -506,8 +506,6 @@ def get_appointment_list(search=None, status=None):
 
 
 
-
-
 @frappe.whitelist(allow_guest=False)
 def get_book_appointments(search=None, status=None):
     """
@@ -515,6 +513,11 @@ def get_book_appointments(search=None, status=None):
     - Employee: only assigned appointments
     - Receptionist / Administrator: all
     - Adviser: no access
+    Returns structured response like:
+    {
+        "status": "success",
+        "data": [ ...appointments... ]
+    }
     """
 
     validate_api_access("Book Appointment")
@@ -570,9 +573,10 @@ def get_book_appointments(search=None, status=None):
             filters=filters,
             fields=[
                 "name", "customer_name", "email", "phone", "license_plate",
-                "make", "model", "service_type", "appointment_date", "appointment_time",
-                "vehicle_pickup_required", "pickup_address", "assigned_to",
-                "drop_address", "status", "description", "creation", "modified"
+                "make", "model", "service_type", "appointment_date",
+                "appointment_time", "vehicle_pickup_required",
+                "pickup_address", "assigned_to", "drop_address",
+                "status", "description", "creation", "modified"
             ]
         )
 
@@ -589,7 +593,19 @@ def get_book_appointments(search=None, status=None):
                 or search_lower in (appt.get("license_plate") or "").lower()
             ]
 
-        return appointments
+        # -------------------------
+        # STANDARD RESPONSE FORMAT
+        # -------------------------
+        return {
+            "status": "success",
+            "pagination": {
+                "current_page": 1,
+                "page_size": len(appointments),
+                "total_records": len(appointments),
+                "total_pages": 1
+            },
+            "data": appointments
+        }
 
     except frappe.PermissionError:
         raise
@@ -599,7 +615,11 @@ def get_book_appointments(search=None, status=None):
             message=frappe.get_traceback(),
             title="Fetch Book Appointments Error"
         )
-        return {"status": "error", "message": str(e)}
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
 
 # ----------------------------------------------------------------------------
 # ...................Get Single Book Appointement Id..........................
@@ -611,27 +631,18 @@ def get_book_appointments(search=None, status=None):
 def get_book_appointment(appointment_id):
     """
     Get a single Book Appointment by ID
-    Only the assigned employee can view it
+    - Administrator & Receptionist → can view all
+    - Assigned Adviser (Employee) → can view only assigned
     """
     validate_api_access("Book Appointment")
 
     try:
         user = frappe.session.user
+        roles = frappe.get_roles(user)
 
-        # --------------------------------
-        # GET EMPLOYEE FROM USER
-        # --------------------------------
-        employee = frappe.db.get_value(
-            "Employee",
-            {"user_id": user},
-            "name"
-        )
-
-        if not employee:
-            frappe.throw(
-                _("Employee not found for this user"),
-                frappe.PermissionError
-            )
+        is_admin = "Administrator" in roles
+        is_receptionist = "Receptionist" in roles
+        is_employee = "Employee" in roles
 
         # --------------------------------
         # FETCH APPOINTMENT
@@ -639,11 +650,33 @@ def get_book_appointment(appointment_id):
         doc = frappe.get_doc("Book Appointment", appointment_id)
 
         # --------------------------------
+        # EMPLOYEE LINK (ONLY FOR EMPLOYEE)
+        # --------------------------------
+        employee = None
+        if is_employee:
+            employee = frappe.db.get_value(
+                "Employee",
+                {"user_id": user},
+                "name"
+            )
+
+        # --------------------------------
         # PERMISSION CHECK
         # --------------------------------
-        if doc.assigned_to != employee:
+        if is_admin or is_receptionist:
+            # Full access
+            pass
+
+        elif is_employee and employee:
+            if doc.assigned_to != employee:
+                frappe.throw(
+                    _("You can only view appointments assigned to you"),
+                    frappe.PermissionError
+                )
+
+        else:
             frappe.throw(
-                _("You can only view appointments assigned to you"),
+                _("You are not allowed to view this appointment"),
                 frappe.PermissionError
             )
 
@@ -679,6 +712,9 @@ def get_book_appointment(appointment_id):
             "data": data
         }
 
+    except frappe.PermissionError:
+        raise
+
     except Exception as e:
         frappe.log_error(
             message=frappe.get_traceback(),
@@ -689,7 +725,6 @@ def get_book_appointment(appointment_id):
             "status_code": 500,
             "message": str(e)
         }
-
 
 
 
