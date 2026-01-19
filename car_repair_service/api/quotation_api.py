@@ -266,3 +266,30 @@ def delete_quotation(quotation_name):
     except Exception as e:
         frappe.log_error(f"Error deleting Quotation {quotation_name}", frappe.get_traceback())
         return {"status": "error", "message": str(e)}
+
+
+
+
+
+@frappe.whitelist(allow_guest=False)
+def download_quotation_pdf(quotation_name, print_format="Standard"):
+    from frappe.utils.pdf import get_pdf
+
+    if not frappe.db.exists("Quotation", quotation_name):
+        frappe.throw("Quotation not found")
+
+    doc = frappe.get_doc("Quotation", quotation_name)
+
+    html = frappe.get_print(
+        doctype="Quotation",
+        name=doc.name,
+        print_format=print_format,
+        doc=doc,
+        no_letterhead=0
+    )
+
+    pdf = get_pdf(html)
+
+    frappe.local.response.filename = f"{doc.name}.pdf"
+    frappe.local.response.filecontent = pdf
+    frappe.local.response.type = "download"
