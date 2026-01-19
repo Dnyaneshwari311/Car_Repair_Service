@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>{{ page_title }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f7f7f7; }
+    h1, h3 { margin: 0 0 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>Quotation: {{ quotation.name }}</h1>
+  <p><strong>Customer:</strong> {{ quotation.customer or quotation.customer_name }}</p>
+  <p><strong>Date:</strong> {{ quotation.transaction_date }}</p>
+  <p><strong>Valid Till:</strong> {{ quotation.valid_till }}</p>
+
+  <h3>Items</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Rate</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in items %}
+      <tr>
+        <td>{{ it.item_name }}</td>
+        <td>{{ it.description }}</td>
+        <td>{{ it.qty }}</td>
+        <td>{{ it.rate }}</td>
+        <td>{{ it.amount }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p style="text-align:right; font-weight:bold;">Total: {{ quotation.grand_total }}</p>
+</body>
+</html>

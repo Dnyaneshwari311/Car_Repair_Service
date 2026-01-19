@@ -271,25 +271,57 @@ def delete_quotation(quotation_name):
 
 
 
-@frappe.whitelist(allow_guest=False)
-def download_quotation_pdf(quotation_name, print_format="Standard"):
-    from frappe.utils.pdf import get_pdf
 
-    if not frappe.db.exists("Quotation", quotation_name):
+import frappe
+from frappe.utils.pdf import get_pdf
+from frappe.utils import get_url
+
+@frappe.whitelist(allow_guest=True)
+def download_quotation_pdf():
+    """
+    API to download quotation as PDF.
+    Accepts query parameter: ?quotation=SAL-QTN-2026-00024
+    Also supports JSON POST with {"name": "SAL-QTN-2026-00024"}
+    """
+    # Accept either query param or JSON body
+    quotation = frappe.form_dict.get("quotation") or frappe.form_dict.get("name")
+    if not quotation:
+        frappe.throw("Quotation ID is required")
+
+    try:
+        doc = frappe.get_doc("Quotation", quotation)
+    except frappe.DoesNotExistError:
         frappe.throw("Quotation not found")
 
-    doc = frappe.get_doc("Quotation", quotation_name)
+    # Prepare context
+    context = frappe._dict()
+    context.quotation = doc
+    context.page_title = f"Quotation {doc.name}"
 
-    html = frappe.get_print(
-        doctype="Quotation",
-        name=doc.name,
-        print_format=print_format,
-        doc=doc,
-        no_letterhead=0
-    )
+    # Prepare items
+    items = []
+    for r in doc.get("items") or []:
+        items.append({
+            "item_name": r.item_name or r.item_code,
+            "description": r.description,
+            "qty": r.qty,
+            "rate": r.rate,
+            "amount": r.amount
+        })
+    context.items = items
 
+    # Prepare approve/reject links (optional)
+    base_url = get_url()
+    context.approve_url = f"{base_url}/api/method/car_repair_service.api.quotation_a_r.approve_quotation?quotation={doc.name}"
+    context.reject_url = f"{base_url}/api/method/car_repair_service.api.quotation_a_r.reject_quotation?quotation={doc.name}"
+
+    # Render PDF template
+    html = frappe.render_template("www/quotation_pdf.html", context)
+
+    # Generate PDF
     pdf = get_pdf(html)
 
-    frappe.local.response.filename = f"{doc.name}.pdf"
+    # Return PDF
+    frappe.local.response.filename = f"Quotation-{doc.name}.pdf"
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "download"
