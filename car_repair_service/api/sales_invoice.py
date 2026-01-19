@@ -412,3 +412,36 @@ def get_sales_invoice(name):
             "status": "error",
             "message": str(e)
         }
+
+
+
+
+
+
+
+
+
+
+@frappe.whitelist(methods=["GET", "POST"])
+def download_sales_invoice_pdf(name):
+    try:
+        if not name:
+            frappe.throw(_("Sales Invoice name is required"))
+
+        # Permission check (important)
+        frappe.has_permission("Sales Invoice", "read", throw=True)
+
+        pdf_data = frappe.get_print(
+            doctype="Sales Invoice",
+            name=name,
+            print_format="Standard",
+            as_pdf=True
+        )
+
+        frappe.response.filename = f"Sales-Invoice-{name}.pdf"
+        frappe.response.filecontent = pdf_data
+        frappe.response.type = "download"
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Download Sales Invoice PDF Error")
+        frappe.throw(str(e))
