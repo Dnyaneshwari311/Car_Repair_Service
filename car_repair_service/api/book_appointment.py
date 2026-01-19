@@ -432,7 +432,7 @@ def create_car_repair_request(appointment_name, status=None):
         # ---------------------------
         repair.flags.ignore_mandatory = True
         repair.save(ignore_permissions=True)
-
+        appointment.status = "Complete"
         appointment.save(ignore_permissions=True)
         frappe.clear_messages()
 
