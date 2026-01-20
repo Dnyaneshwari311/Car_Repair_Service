@@ -11,7 +11,18 @@ from car_repair_service.api.utils import get_paginated_data
 @frappe.whitelist(allow_guest=False)
 def create_vehicle(data=None):
     
+    
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+             if "Administrator" not in roles and "Receptionist" not in roles:
+           
+              return {
+                    "status": "error",
+                    "message": "You are not allowed to View Vehicle list"
+                }
         if not data:
             data = frappe.request.get_json(silent=True)
 
@@ -94,6 +105,16 @@ def get_vehicle(license_plate):
     """
     Fetch a single vehicle using its license_plate.
     """
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to update Vehicle list"
+      }
+       
     vehicle = frappe.get_value("Vehicle", {"license_plate": license_plate}, "*")
     if not vehicle:
         frappe.throw("Vehicle not found", frappe.DoesNotExistError)
@@ -122,6 +143,17 @@ def update_vehicle(license_plate, data=None):
     }
     """
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to update Vehicle list"
+    }
+            
+            
         if not data:
             data = frappe.request.get_json(silent=True)
 
@@ -197,6 +229,16 @@ def delete_vehicle(license_plate):
     Delete a vehicle by license_plate.
     """
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View Vehicle list"
+    }
+       
         doc = frappe.get_doc("Vehicle", {"license_plate": license_plate})
         doc.delete()
         frappe.db.commit()
@@ -217,61 +259,6 @@ def delete_vehicle(license_plate):
 
 
 
-
-
-# @frappe.whitelist(allow_guest=False)
-# def list_vehicle(filters=None, limit_start=0, limit_page_length=10):
-   
-#     """
-#     Fetch paginated list of vehicles with optional filters.
-#     Example:
-#     /api/method/car_repair_service.api.vehicle_api.get_vehicles?filters={"make": "Tata"}&limit_start=0&limit_page_length=5
-#     """
-#     try:
-#         # Convert filters from string to dict
-#         if filters:
-#             if isinstance(filters, str):
-#                 filters = json.loads(filters)
-#         else:
-#             filters = {}
-
-#         # Get total count for pagination
-#         total_count = frappe.db.count("Vehicle", filters)
-
-#         # Fetch paginated vehicles
-#         vehicles = frappe.get_all(
-#             "Vehicle",
-#             filters=filters,
-#             fields=[
-#                 "name", "license_plate", "make", "model", "chassis_no","car_manufacturing_year", "modified","custom_customer_name"
-#             ],
-#             order_by="modified desc",
-#             limit_start=int(limit_start),
-#             limit_page_length=int(limit_page_length),
-#         )
-
-#         # Convert make/model to human-readable
-#         for v in vehicles:
-#             if v.get("make"):
-#                 v["make"] = frappe.db.get_value("Vehicle Make", v["make"], "make")
-#             if v.get("model"):
-#                 v["model"] = frappe.db.get_value("Vehicle Model", v["model"], "model")
-
-#         return {
-#             "status": "success",
-#             "message": _("Vehicles fetched successfully"),
-#             "total": total_count,
-#             "page_size": int(limit_page_length),
-#             "page_start": int(limit_start),
-#             "data": vehicles
-#         }
-
-#     except Exception as e:
-#         frappe.local.response.http_status_code = 500
-#         return {"status": "error", "message": str(e)}
-
-
-
 @frappe.whitelist(allow_guest=False)
 def list_vehicle(
     custom_customer_name=None,
@@ -282,6 +269,15 @@ def list_vehicle(
     limit_page_length=10
 ):
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View Vehicle list"
+        }
         conditions = []
         values = {}
 
@@ -403,6 +399,15 @@ def list_vehicle_by_customer(customer):
     /api/method/car_repair_service.api.vehicle_api.list_vehicle_by_customer?customer=Customer%20A
     """
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View Vehicle list"
+        }
         if not customer:
             frappe.throw("Customer name is required")
 

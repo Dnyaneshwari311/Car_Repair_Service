@@ -18,6 +18,17 @@ def get_vehicle_models(
     """
 
     try:
+        
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View Vehicle list"
+    }
+       
         # -----------------------------
         # PAGINATION
         # -----------------------------

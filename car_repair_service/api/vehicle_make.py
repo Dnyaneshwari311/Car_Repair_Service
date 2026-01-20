@@ -1,28 +1,7 @@
-# import frappe
-
-# @frappe.whitelist(methods=["GET"])
-# def get_vehicle_makes():
-#     try:
-#         makes = frappe.get_all(
-#             "Vehicle Make",
-#             fields=[ "make"],
-#             order_by="make asc"
-#         )
-
-#         return {
-#             "status": "success",
-#             "message": "Vehicle makes fetched successfully",
-#             "data": makes
-#         }
-
-#     except Exception as e:
-#         frappe.log_error(frappe.get_traceback(), "Vehicle Make List API Error")
-#         return {
-#             "status": "error",
-#             "message": str(e)
-#         }
 
 import frappe
+from frappe import _
+
 
 @frappe.whitelist(methods=["GET"])
 def get_vehicle_makes(
@@ -37,6 +16,16 @@ def get_vehicle_makes(
     """
 
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View Vehicle list"
+    }
+            
         page = int(page)
         page_size = int(page_size)
         start = (page - 1) * page_size
@@ -66,6 +55,8 @@ def get_vehicle_makes(
             "Vehicle Make",
             filters=filters
         )
+        
+        frappe.clear_message()
 
         return {
             "status": "success",

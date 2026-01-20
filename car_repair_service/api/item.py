@@ -5,6 +5,15 @@ def create_item(data=None):
     """
     Create a new Item
     """
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to Create Item"
+    }
     if not data:
         data = frappe.form_dict
 
@@ -44,7 +53,14 @@ def list_items(
     """
     List Items with custom part no, rate, amount, search & pagination
     """
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
 
+    if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to view Item List"    }
     page = int(page)
     page_size = int(page_size)
     start = (page - 1) * page_size
@@ -138,6 +154,15 @@ def update_item(data=None):
     Update Item safely
     """
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to Update Item"
+    }
         if not data:
             data = frappe.form_dict
 
@@ -187,6 +212,15 @@ def delete_item(data=None):
     """
     Delete or Disable Item safely
     """
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to Delete Item"
+    }
     try:
         if not data:
             data = frappe.form_dict

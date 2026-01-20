@@ -1,9 +1,21 @@
 import frappe
 from frappe import _
+from car_repair_service.api.role_validation import validate_api_access
 
 @frappe.whitelist(methods=["POST"])
 def create_sales_invoice_from_car_repair(car_repair_name):
     try:
+        
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to Create Sales Invoice"
+        } 
+
         # ⚠️ Use exact DocType name
         car_repair = frappe.get_doc("Car repair", car_repair_name)
 
@@ -71,153 +83,114 @@ def create_sales_invoice_from_car_repair(car_repair_name):
 
 
 
-# @frappe.whitelist(methods=["GET"])
-# def list_sales_invoices(
-#     page=1,
-#     limit=20,
-#     search=None,
-#     customer=None
-# ):
-#     page = int(page)
-#     limit = int(limit)
-#     start = (page - 1) * limit
-
-#     filters = {}
-#     if customer:
-#         filters["customer"] = customer
-
-#     or_filters = []
-#     if search:
-#         or_filters = [
-#             ["Sales Invoice", "name", "like", f"%{search}%"],
-#             ["Sales Invoice", "customer_name", "like", f"%{search}%"]
-#         ]
-
-#     # -----------------------------
-#     # TOTAL COUNT (NO or_filters)
-#     # -----------------------------
-#     total_records = frappe.get_all(
-#         "Sales Invoice",
-#         filters=filters,
-#         or_filters=or_filters if or_filters else None,
-#         pluck="name"
-#     )
-
-#     total = len(total_records)
-
-#     # -----------------------------
-#     # PAGINATED DATA
-#     # -----------------------------
-#     data = frappe.get_all(
-#         "Sales Invoice",
-#         filters=filters,
-#         or_filters=or_filters if or_filters else None,
-#         fields=[
-#             "name",
-#             "customer",
-#             "customer_name",
-#             "posting_date",
-#             "due_date",
-#             "status",
-#             "grand_total",
-#             "outstanding_amount",
-#             "docstatus"
-#         ],
-#         start=start,
-#         page_length=limit,
-#         order_by="modified desc"
-#     )
-
-#     return {
-#         "status": "success",
-#         "page": page,
-#         "limit": limit,
-#         "total": total,
-#         "data": data
-#     }
-
-
-
-
-@frappe.whitelist(methods=["GET"])
+@frappe.whitelist(methods=["GET"], allow_guest=False)
 def list_sales_invoices(
     page=1,
     limit=20,
     search=None,
     customer=None
 ):
-    page = int(page)
-    limit = int(limit)
-    start = (page - 1) * limit
+    try:
+        # --------------------------------------------------
+        # ROLE CHECK
+        # --------------------------------------------------
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
 
-    filters = {}
-    if customer:
-        filters["customer"] = customer
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View Sales Invoice"
+        } 
 
-    or_filters = []
-    if search:
-        or_filters = [
-            ["Sales Invoice", "name", "like", f"%{search}%"],
-            ["Sales Invoice", "customer_name", "like", f"%{search}%"]
-        ]
+        # --------------------------------------------------
+        # PAGINATION
+        # --------------------------------------------------
+        page = int(page)
+        limit = int(limit)
+        start = (page - 1) * limit
 
-    # -----------------------------
-    # TOTAL COUNT
-    # -----------------------------
-    total = frappe.db.count(
-        "Sales Invoice",
-        filters=filters
-    )
+        # --------------------------------------------------
+        # FILTERS
+        # --------------------------------------------------
+        filters = {}
+        if customer:
+            filters["customer"] = customer
 
-    # -----------------------------
-    # FETCH SALES INVOICES
-    # -----------------------------
-    invoices = frappe.get_all(
-        "Sales Invoice",
-        filters=filters,
-        or_filters=or_filters if or_filters else None,
-        fields=[
-            "name",
-            "customer",
-            "customer_name",
-            "posting_date",
-            "posting_time",
-            "due_date",
-            "status",
-            "grand_total",
-            "outstanding_amount",
-            "docstatus"
-        ],
-        start=start,
-        page_length=limit,
-        order_by="modified desc"
-    )
-
-    # -----------------------------
-    # FETCH ITEMS FOR EACH INVOICE
-    # -----------------------------
-    for inv in invoices:
-        inv["items"] = frappe.get_all(
-            "Sales Invoice Item",
-            filters={"parent": inv["name"]},
-            fields=[
-                "item_code",
-                "item_name",
-                "qty",
-                "rate",
-                "amount"
+        or_filters = []
+        if search:
+            or_filters = [
+                ["Sales Invoice", "name", "like", f"%{search}%"],
+                ["Sales Invoice", "customer_name", "like", f"%{search}%"]
             ]
+
+        # --------------------------------------------------
+        # TOTAL COUNT
+        # --------------------------------------------------
+        total = frappe.db.count(
+            "Sales Invoice",
+            filters=filters
         )
 
-    return {
-        "status": "success",
-        "page": page,
-        "limit": limit,
-        "total": total,
-        "data": invoices
-    }
+        # --------------------------------------------------
+        # FETCH SALES INVOICES
+        # --------------------------------------------------
+        invoices = frappe.get_all(
+            "Sales Invoice",
+            filters=filters,
+            or_filters=or_filters if or_filters else None,
+            fields=[
+                "name",
+                "customer",
+                "customer_name",
+                "posting_date",
+                "posting_time",
+                "due_date",
+                "status",
+                "grand_total",
+                "outstanding_amount",
+                "docstatus"
+            ],
+            start=start,
+            page_length=limit,
+            order_by="modified desc"
+        )
 
+        # --------------------------------------------------
+        # FETCH ITEMS FOR EACH INVOICE
+        # --------------------------------------------------
+        for inv in invoices:
+            inv["items"] = frappe.get_all(
+                "Sales Invoice Item",
+                filters={"parent": inv["name"]},
+                fields=[
+                    "item_code",
+                    "item_name",
+                    "qty",
+                    "rate",
+                    "amount"
+                ]
+            )
 
+        return {
+            "status": "success",
+            "status_code": 200,
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "data": invoices
+        }
+
+    except frappe.PermissionError:
+        raise
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "List Sales Invoices Error")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 
@@ -227,6 +200,16 @@ def list_sales_invoices(
 @frappe.whitelist(methods=["PUT", "POST"])
 def update_sales_invoice(name, data=None):
     try:
+        
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to update Sales Invoice"
+    }
         # -----------------------------
         # READ INPUT DATA
         # -----------------------------
@@ -309,6 +292,16 @@ def update_sales_invoice(name, data=None):
 @frappe.whitelist(methods=["DELETE"])
 def delete_sales_invoice(name):
     try:
+        
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to delete Sales Invoice"
+    }
         if not name:
             frappe.throw(_("Sales Invoice name is required"))
 
@@ -352,24 +345,48 @@ def delete_sales_invoice(name):
 
 
 
-
-
-@frappe.whitelist(methods=["GET"])
+@frappe.whitelist(methods=["GET"], allow_guest=False)
 def get_sales_invoice(name):
     try:
+        # --------------------------------------------------
+        # ROLE CHECK
+        # --------------------------------------------------
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View Sales Invoice"
+        } 
+
+        # --------------------------------------------------
+        # VALIDATION
+        # --------------------------------------------------
         if not name:
             frappe.throw(_("Sales Invoice name is required"))
 
+        if not frappe.db.exists("Sales Invoice", name):
+            frappe.throw(_("Sales Invoice not found"))
+
+        # --------------------------------------------------
+        # FETCH INVOICE
+        # --------------------------------------------------
         si = frappe.get_doc("Sales Invoice", name)
 
+        # --------------------------------------------------
+        # RESPONSE
+        # --------------------------------------------------
         return {
             "status": "success",
+            "status_code": 200,
             "data": {
                 "name": si.name,
                 "customer": si.customer,
                 "customer_name": si.customer_name,
                 "company": si.company,
-                "posting_time":si.posting_time,
+                "posting_time": si.posting_time,
                 "posting_date": si.posting_date,
                 "due_date": si.due_date,
                 "status": si.status,
@@ -384,7 +401,7 @@ def get_sales_invoice(name):
                         "item_name": d.item_name,
                         "qty": d.qty,
                         "rate": d.rate,
-                        "amount": d.amount
+                        "amount": d.amount,
                     }
                     for d in si.items
                 ],
@@ -393,27 +410,28 @@ def get_sales_invoice(name):
                         "charge_type": t.charge_type,
                         "account_head": t.account_head,
                         "rate": t.rate,
-                        "tax_amount": t.tax_amount
+                        "tax_amount": t.tax_amount,
                     }
                     for t in si.taxes
-                ]
-            }
+                ],
+            },
         }
+
+    except frappe.PermissionError:
+        raise
 
     except frappe.DoesNotExistError:
         return {
             "status": "error",
-            "message": "Sales Invoice not found"
+            "message": "Sales Invoice not found",
         }
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Get Sales Invoice Error")
         return {
             "status": "error",
-            "message": str(e)
+            "message": str(e),
         }
-
-
 
 
 
@@ -425,6 +443,16 @@ def get_sales_invoice(name):
 @frappe.whitelist(methods=["GET", "POST"])
 def download_sales_invoice_pdf(name):
     try:
+        
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to download Sales Invoice"
+    }
         if not name:
             frappe.throw(_("Sales Invoice name is required"))
 

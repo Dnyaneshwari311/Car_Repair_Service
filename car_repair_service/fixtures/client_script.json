@@ -284,5 +284,16 @@
   "name": "Date and Time Validation On Car Diagnosis",
   "script": "frappe.ui.form.on(\"Car Diagnosis\", {\n    refresh(frm) {\n        // 1️⃣ Restrict date picker (UI level)\n        frm.set_df_property(\"estimated_delivery_date\", \"options\", {\n            minDate: frappe.datetime.get_today()\n        });\n    },\n\n    estimated_delivery_date(frm) {\n        validate_delivery_datetime(frm);\n    },\n\n    estimated_delivery_time(frm) {\n        validate_delivery_datetime(frm);\n    },\n\n    validate(frm) {\n        validate_delivery_datetime(frm);\n    }\n});\n\nfunction validate_delivery_datetime(frm) {\n    if (!frm.doc.estimated_delivery_date || !frm.doc.estimated_delivery_time) return;\n\n    const today = frappe.datetime.get_today();\n    const now_time = frappe.datetime.now_time();\n\n    // ❌ Block past dates\n    if (frm.doc.estimated_delivery_date < today) {\n        frappe.msgprint(__(\"Backdated delivery date is not allowed.\"));\n        frm.set_value(\"estimated_delivery_date\", \"\");\n        frm.set_value(\"estimated_delivery_time\", \"\");\n        frappe.validated = false;\n        return;\n    }\n\n    // ❌ If today → block past time\n    if (frm.doc.estimated_delivery_date === today) {\n        if (frm.doc.estimated_delivery_time <= now_time) {\n            frappe.msgprint(__(\"Past delivery time is not allowed for today.\"));\n            frm.set_value(\"estimated_delivery_time\", \"\");\n            frappe.validated = false;\n        }\n    }\n}\n",
   "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Car repair",
+  "enabled": 1,
+  "modified": "2026-01-20 17:19:08.740265",
+  "module": null,
+  "name": "Car Repair Assigned To Employee Then He Can See Only Assigned",
+  "script": "frappe.ui.form.on(\"Car repair\", {\n    refresh(frm) {\n        if (!frm.doc.list_of_damage) return;\n        \n        if (frappe.session.user === \"Administrator\") return;\n\n        // If user has Advisor role → see all rows\n        if (frappe.user_roles.includes(\"Assign Advisor\")) return;\n\n        frappe.call({\n            method: \"frappe.client.get_value\",\n            args: {\n                doctype: \"Employee\",\n                filters: { user_id: frappe.session.user },\n                fieldname: \"name\"\n            },\n            callback(r) {\n                if (!r.message) return;\n\n                let employee = r.message.name;\n\n                // Filter child table rows\n                frm.fields_dict.list_of_damage.grid.grid_rows.forEach(row => {\n                    if (row.doc.assigned_to !== employee) {\n                        row.wrapper.hide();\n                    } else {\n                        row.wrapper.show();\n                    }\n                });\n            }\n        });\n    }\n});\n",
+  "view": "Form"
  }
 ]

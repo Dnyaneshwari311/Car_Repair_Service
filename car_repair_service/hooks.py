@@ -361,7 +361,10 @@ fixtures = [
                 "Vehicle Pick Up Required Same Like Bokk Appointement",
                 "Date and Time Validation On Car Diagnosis",
                 "Date And Time Validation For Book Appontement",
-                "Job Card Creaion Hide Customer Signature and images"
+                "Job Card Creaion Hide Customer Signature and images",
+                "Employee Can not Confirmed Book Appointemnt",
+                "Car Repair Assigned To Employee Then He Can See Only Assigned"
+                
                 
                 
             ]]
