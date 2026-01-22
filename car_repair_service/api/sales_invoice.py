@@ -50,7 +50,7 @@ def create_sales_invoice_from_car_repair(car_repair_name):
                 continue
 
             si.append("items", {
-                "item_code": d.part_required,
+                "item_name": d.part_required,
                 "qty": d.quantity,
                 "rate": d.estimated_cost
             })
