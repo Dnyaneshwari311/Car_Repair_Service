@@ -363,7 +363,7 @@ fixtures = [
                 "Date And Time Validation For Book Appontement",
                 "Job Card Creaion Hide Customer Signature and images",
                 "Employee Can not Confirmed Book Appointemnt",
-                "Car Repair Assigned To Employee Then He Can See Only Assigned"
+                # "Car Repair Assigned To Employee Then He Can See Only Assigned"
                 
                 
                 

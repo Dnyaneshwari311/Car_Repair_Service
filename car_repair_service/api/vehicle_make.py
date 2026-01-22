@@ -56,7 +56,7 @@ def get_vehicle_makes(
             filters=filters
         )
         
-        frappe.clear_message()
+        
 
         return {
             "status": "success",
