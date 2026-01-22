@@ -19,7 +19,9 @@ ROLE_DOCTYPE_MAP = {
         "Book Appointment",
         "Car Repair Request",
         "Car Diagnosis",
-        "Car repair"
+        "Car repair",
+        "Quotation",
+        "Sales Invoice"
     ]
 }
 

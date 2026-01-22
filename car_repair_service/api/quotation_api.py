@@ -1,6 +1,8 @@
 import frappe
 from frappe import _
 from car_repair_service.api.utils import get_paginated_data
+from car_repair_service.api.role_validation import validate_api_access
+
 
 # ----------------------
 # CREATE QUOTATION
@@ -70,6 +72,15 @@ def update_quotation(quotation_name, data):
     Add new items to an existing Quotation without removing existing items.
     """
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to Update Quotation List"
+    }
         # Parse JSON string if needed
         if isinstance(data, str):
             data = json.loads(data)
@@ -121,9 +132,19 @@ def get_quotation(quotation_name):
     Get Quotation details by name
     """
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View Quotation"
+        }
         qtn = frappe.get_doc("Quotation", quotation_name)
         data = qtn.as_dict()
         data["items"] = [item.as_dict() for item in qtn.items]
+       
         return {"status": "success", "quotation": data}
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -138,10 +159,22 @@ from urllib.parse import urljoin
 @frappe.whitelist(allow_guest=False)
 def quotation_list(page=1, page_size=10, search=None, sort_by="creation", sort_order="desc", is_pagination=False, **kwargs):
    
+
+   
     """
     Fetch paginated Quotation list with items, search, and sorting.
     """
     try:
+        
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View Quotation List"
+    }
         is_pagination = frappe.utils.sbool(is_pagination)
         base_url = frappe.request.host_url.rstrip("/") + frappe.request.path
         del kwargs["cmd"]
@@ -258,6 +291,14 @@ def delete_quotation(quotation_name):
     Delete a Quotation by name
     """
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+        if "Administrator" not in roles and "Receptionist" not in roles:
+                
+                    return {
+                    "status": "error",
+                "message": "You are not allowed to delete Quotation"
+            }
         frappe.delete_doc("Quotation", quotation_name, ignore_permissions=True)
         frappe.db.commit()
         return {"status": "success", 
@@ -283,6 +324,15 @@ def download_quotation_pdf():
     Accepts query parameter: ?quotation=SAL-QTN-2026-00024
     Also supports JSON POST with {"name": "SAL-QTN-2026-00024"}
     """
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to download Quotation"
+    }
     # Accept either query param or JSON body
     quotation = frappe.form_dict.get("quotation") or frappe.form_dict.get("name")
     if not quotation:

@@ -28,11 +28,32 @@ def file_url_to_base64(file_url):
 # --------------------------------------------------
 # CREATE CAR REPAIR REQUEST
 # --------------------------------------------------
+
 @frappe.whitelist(allow_guest=False)
 def create_car_repair_request(data):
-    validate_api_access("Car Repair Request")
+    """
+    Create Car Repair Request
+    - Only Receptionist and Administrator are allowed
+    """
+
+    # validate_api_access("Car Repair Request")
 
     try:
+        # --------------------------------------------------
+        # ROLE CHECK
+        # --------------------------------------------------
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if not ("Receptionist" in roles or "Administrator" in roles):
+            frappe.throw(
+                _("You are not allowed to create Car Repair Request"),
+                frappe.PermissionError
+            )
+
+        # --------------------------------------------------
+        # PARSE DATA
+        # --------------------------------------------------
         data = json.loads(data) if isinstance(data, str) else data
         files = frappe.request.files
 
@@ -44,7 +65,6 @@ def create_car_repair_request(data):
         phone = data.get("phone")
         car = data.get("car")
         license_plate = data.get("license_plate")
-      
 
         if not customer_name or not email:
             frappe.throw(_("Missing customer name or email"))
@@ -56,7 +76,7 @@ def create_car_repair_request(data):
         is_pickup = vehicle_pickup_required == "Yes, Pickup my vehicle"
 
         # --------------------------------------------------
-        # FILE VALIDATIONS (BEFORE INSERT)
+        # FILE VALIDATIONS
         # --------------------------------------------------
         if not files.get("odometer_photo"):
             frappe.throw(_("Odometer photo is required"))
@@ -106,20 +126,24 @@ def create_car_repair_request(data):
         # --------------------------------------------------
         make = data.get("make")
         model = data.get("model")
-        
-        print("make..........",make)
 
         if make and not frappe.db.exists("Vehicle Make", {"make": make}):
-            frappe.get_doc({"doctype": "Vehicle Make", "make": make}).insert(ignore_permissions=True)
+            frappe.get_doc({
+                "doctype": "Vehicle Make",
+                "make": make
+            }).insert(ignore_permissions=True)
 
         if model and not frappe.db.exists("Vehicle Model", {"model": model}):
-            frappe.get_doc({"doctype": "Vehicle Model", "model": model}).insert(ignore_permissions=True)
+            frappe.get_doc({
+                "doctype": "Vehicle Model",
+                "model": model
+            }).insert(ignore_permissions=True)
 
         # --------------------------------------------------
-        # CREATE DOCUMENT (INSERT ONCE)
+        # CREATE DOCUMENT
         # --------------------------------------------------
         doc = frappe.new_doc("Car Repair Request")
-        doc.docstatus = 0 
+        doc.docstatus = 0  # Draft
 
         fields = [
             "email", "phone", "make", "model", "assign_adviser",
@@ -133,16 +157,14 @@ def create_car_repair_request(data):
             "pickup_address", "same_as_pick_up_address",
             "drop_address"
         ]
-        
-        print("fields...........",fields)
 
         for f in fields:
             if f in data:
                 doc.set(f, data[f])
-    
-        
+
         doc.customer = customer_doc.name
         doc.customer_name = customer_doc.customer_name
+
         doc.insert(ignore_permissions=True, ignore_mandatory=True)
 
         # --------------------------------------------------
@@ -208,7 +230,7 @@ def create_car_repair_request(data):
             frappe.throw(_("At least one Car Repair Image is required when vehicle pickup is selected"))
 
         # --------------------------------------------------
-        # FINAL SAVE & COMMIT
+        # FINAL SAVE
         # --------------------------------------------------
         doc.save(ignore_permissions=True)
         frappe.db.commit()
@@ -220,9 +242,15 @@ def create_car_repair_request(data):
             "name": doc.name
         }
 
+    except frappe.PermissionError:
+        raise
+
     except Exception as e:
         frappe.db.rollback()
-        frappe.log_error("Create Car Repair Request Error", frappe.get_traceback())
+        frappe.log_error(
+            title="Create Car Repair Request Error",
+            message=frappe.get_traceback()
+        )
         return {
             "status": "error",
             "status_code": 500,
@@ -270,7 +298,7 @@ def create_car_diagnosis(customer_name=None, customer=None):
             order_by="creation desc",
             limit_page_length=1
         )
-
+         
         if not last_request:
             return {"status": "not_found", "message": "No Car Repair Request found for this customer"}
 
@@ -357,27 +385,66 @@ def create_car_diagnosis(customer_name=None, customer=None):
 
 
 
+
+
+
 @frappe.whitelist(allow_guest=False)
 def create_quotation_from_car_diagnosis(diagnosis_name):
     validate_api_access("Car Repair Request")
-    """
-    API: Create a Quotation from a Car Diagnosis record.
-    - Reuses Item if item_code OR item_name exists
-    - Creates Item only when truly missing
-    - Copies vehicle, model & license plate for Car Repair flow
-    """
 
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        is_admin = "Administrator" in roles
+        is_receptionist = "Receptionist" in roles
+        is_employee = "Employee" in roles
+
         # ==============================
         # Fetch Diagnosis
         # ==============================
         diag = frappe.get_doc("Car Diagnosis", diagnosis_name)
+        
+        
 
+        # ==============================
+        # EMPLOYEE LINK
+        # ==============================
+        employee = None
+        if is_employee:
+            employee = frappe.db.get_value(
+                "Employee",
+                {"user_id": user},
+                "name"
+            )
+
+        # ==============================
+        # PERMISSION CHECK
+        # ==============================
+        if is_admin or is_receptionist:
+            pass  # full access
+
+        elif is_employee and employee:
+            if diag.assign_adviser != employee:
+                frappe.throw(
+                    _("Only the assigned adviser can create a quotation"),
+                    frappe.PermissionError
+                )
+
+        else:
+            frappe.throw(
+                _("You are not allowed to create quotation"),
+                frappe.PermissionError
+            )
+
+        # ==============================
+        # BASIC VALIDATION
+        # ==============================
         if not diag.customer_name:
             frappe.throw(_("Customer not found in Car Diagnosis"))
 
         # ==============================
-        # Fetch Vehicle (SOURCE OF TRUTH)
+        # Fetch Vehicle
         # ==============================
         vehicle = None
         if diag.get("car") and frappe.db.exists("Vehicle", diag.car):
@@ -396,21 +463,20 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
             qtn.contact_email = diag.email_id
 
         # ==============================
-        # Vehicle Info (🔥 REQUIRED FIX)
+        # Vehicle Info
         # ==============================
         vehicle_field = "vehicle" if "vehicle" in qtn.as_dict() else "custom_vehicle"
 
         if diag.get("car"):
             setattr(qtn, vehicle_field, diag.car)
 
-        # ✅ EXACT FIELD NAMES
         qtn.liscense_plate = vehicle.license_plate if vehicle else ""
         qtn.model = vehicle.model if vehicle else ""
 
         added_items = False
 
         # ==============================
-        # Add Items from Diagnosis
+        # Add Items
         # ==============================
         for d in diag.get("car_diagnosis_detail") or []:
             if not d.part_required:
@@ -418,17 +484,9 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
 
             part_name = d.part_required.strip()
 
-            # ----------------------------------
-            # Resolve Item safely
-            # ----------------------------------
-            existing_item = None
-
-            if frappe.db.exists("Item", part_name):
-                existing_item = part_name
-            else:
-                existing_item = frappe.db.get_value(
-                    "Item", {"item_name": part_name}, "name"
-                )
+            # Item resolve
+            existing_item = frappe.db.exists("Item", part_name) or \
+                frappe.db.get_value("Item", {"item_name": part_name}, "name")
 
             if not existing_item:
                 item_doc = frappe.get_doc({
@@ -468,14 +526,15 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
                 item.rate = 0.0
                 item.uom = "Nos"
                 item.amount = 0.0
-
-        # ==============================
+                
+        #  ==============================
         # Final Validation
         # ==============================
         for item in qtn.items:
             item.qty = float(item.qty or 1.0)
             item.rate = float(item.rate or 0.0)
             item.amount = item.qty * item.rate
+               
 
         # ==============================
         # Insert Quotation
@@ -494,6 +553,9 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
             "quotation_name": qtn.name
         }
 
+    except frappe.PermissionError:
+        raise
+
     except Exception as e:
         frappe.log_error(
             f"Error creating Quotation from Car Diagnosis {diagnosis_name}",
@@ -510,10 +572,6 @@ def create_quotation_from_car_diagnosis(diagnosis_name):
 
 
 
-
-
-
-
 @frappe.whitelist(allow_guest=False)
 def get_car_repair_request(
     page=None,
@@ -521,13 +579,76 @@ def get_car_repair_request(
     sort_by="creation",
     sort_order="desc",
     search=None,
-    docstatus=None
+    docstatus=None,
+    assign_adviser=None
 ):
     import frappe
     import math
-    validate_api_access("Car Repair Request")
-
+  
     try:
+        # --------------------------------------------------
+        # USER & ROLES
+        # --------------------------------------------------
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        is_admin = "Administrator" in roles
+        is_receptionist = "Receptionist" in roles
+        # is_employee = "Employee" in roles
+
+        # --------------------------------------------------
+        # GET EMPLOYEE LINKED TO USER
+        # --------------------------------------------------
+        # employee = None
+        # if is_employee:
+        employee = frappe.db.get_value(
+                "Employee",
+                {"user_id": user},
+                "name"
+            )
+
+        # --------------------------------------------------
+        # FILTERS
+        # --------------------------------------------------
+        filters = {}
+
+        # docstatus filter
+        if docstatus is not None:
+            try:
+                filters["docstatus"] = int(docstatus)
+            except ValueError:
+                filters["docstatus"] = 0
+
+        # --------------------------------------------------
+        # ACCESS CONTROL (CORRECT ORDER)
+        # --------------------------------------------------
+
+        # Admin / Receptionist → full access
+        if is_admin or is_receptionist:
+            if assign_adviser:
+                filters["assign_adviser"] = assign_adviser
+
+        # Assign Advisor (Employee-linked user)
+        elif employee:
+            # Adviser can see ONLY assigned requests
+            filters["assign_adviser"] = employee
+
+        # Others → no access
+        else:
+            frappe.throw(
+                "You are not allowed to view Car Repair Requests",
+                frappe.PermissionError
+            )
+
+        
+        
+        
+        
+        
+        
+        # --------------------------------------------------
+        # IMAGE MAP
+        # --------------------------------------------------
         IMAGE_TYPE_KEY_MAP = {
             "Front View": "front_view",
             "Back View": "back_view",
@@ -543,9 +664,9 @@ def get_car_repair_request(
                 "right_view": []
             }
 
-        # -------------------------
-        # Fields
-        # -------------------------
+        # --------------------------------------------------
+        # FIELDS
+        # --------------------------------------------------
         fields = [
             "name", "customer_name", "email", "phone",
             "make", "model", "license_plate", "assign_adviser",
@@ -553,39 +674,28 @@ def get_car_repair_request(
             "priority", "service_type", "repair_request_date",
             "reason_for_repair", "odometer_value",
             "odometer_value_current", "customer_signature",
-            "driver_name", "driver_mob_no", "fuel_type","docstatus"
+            "driver_name", "driver_mob_no", "fuel_type", "docstatus"
         ]
 
         search_fields = [
             "name", "customer_name", "make",
             "model", "license_plate", "service_type", "priority"
         ]
-        
-        
-        
-         # -------------------------
-        filters = {}
-        if docstatus is not None:
-            try:
-                filters["docstatus"] = int(docstatus)
-            except ValueError:
-                filters["docstatus"] = 0  # default to draft if invalid
 
-
-        # -------------------------
-        # Fetch all records
-        # -------------------------
+        # --------------------------------------------------
+        # FETCH DATA
+        # --------------------------------------------------
         all_data = frappe.get_all(
             "Car Repair Request",
-            filters=filters if filters else None,
+            filters=filters,
             fields=fields,
             order_by=f"{sort_by} {sort_order}",
             as_list=False
         )
 
-        # -------------------------
-        # Search
-        # -------------------------
+        # --------------------------------------------------
+        # SEARCH
+        # --------------------------------------------------
         if search:
             search = search.lower()
             all_data = [
@@ -595,9 +705,9 @@ def get_car_repair_request(
 
         total_records = len(all_data)
 
-        # -------------------------
-        # Auto pagination detection
-        # -------------------------
+        # --------------------------------------------------
+        # PAGINATION
+        # --------------------------------------------------
         is_pagination = page is not None or page_size is not None
 
         if is_pagination:
@@ -607,18 +717,16 @@ def get_car_repair_request(
             start = (page - 1) * page_size
             end = start + page_size
             data_to_return = all_data[start:end]
-
             total_pages = math.ceil(total_records / page_size)
         else:
-            # FULL LIST
             data_to_return = all_data
             page = None
             page_size = None
             total_pages = 1
 
-        # -------------------------
-        # Add child images
-        # -------------------------
+        # --------------------------------------------------
+        # ADD CHILD IMAGES
+        # --------------------------------------------------
         for row in data_to_return:
             row["car_repair_images"] = empty_image_structure()
 
@@ -651,6 +759,9 @@ def get_car_repair_request(
             "is_pagination": is_pagination
         }
 
+    except frappe.PermissionError:
+        raise
+
     except Exception:
         frappe.log_error(
             title="Get Car Repair Request Error",
@@ -663,11 +774,89 @@ def get_car_repair_request(
 
 
 
+# @frappe.whitelist(allow_guest=False)
+# def get_car_repair_request_by_id(name):
+   
+
+#     try:
+#         if not name:
+#             return {
+#                 "status": "error",
+#                 "message": "Car Repair Request ID is required"
+#             }
+
+#         if not frappe.db.exists("Car Repair Request", name):
+#             return {
+#                 "status": "error",
+#                 "message": f"Car Repair Request '{name}' not found"
+#             }
+
+#         IMAGE_TYPE_KEY_MAP = {
+#             "Front View": "front_view",
+#             "Back View": "back_view",
+#             "Left View": "left_view",
+#             "Right View": "right_view"
+#         }
+
+#         def empty_image_structure():
+#             return {
+#                 "front_view": [],
+#                 "back_view": [],
+#                 "left_view": [],
+#                 "right_view": []
+#             }
+
+#         doc = frappe.get_doc("Car Repair Request", name)
+#         data = doc.as_dict()
+
+#         # vehicle concerns
+#         data["vehicle_concern"] = [
+#             {"vehicle_concern": vc.vehicle_concern}
+#             for vc in doc.get("vehicle_concern", [])
+#         ]
+
+#         # grouped images
+#         grouped_images = empty_image_structure()
+#         for img in doc.get("car_repair_images", []):
+#             key = IMAGE_TYPE_KEY_MAP.get(img.image_type)
+#             if key:
+#                 grouped_images[key].append(
+#                     frappe.utils.get_url(img.image)
+#                 )
+
+#         data["car_repair_images"] = grouped_images
+
+#         if data.get("odometer_photo"):
+#             data["odometer_photo"] = frappe.utils.get_url(
+#                 data["odometer_photo"]
+#             )
+
+#         return {
+#             "status": "success",
+#             "status_code":200,
+#             "data": data
+#         }
+
+#     except Exception:
+#         frappe.log_error(
+#             title="Get Car Repair Request By ID Error",
+#             message=frappe.get_traceback()
+#         )
+#         return {
+#             "status": "error",
+#             "message": "Internal Server Error"
+#         }
+
 
 
 @frappe.whitelist(allow_guest=False)
 def get_car_repair_request_by_id(name):
+    import frappe
+
     try:
+        # --------------------------------------------------
+        # BASIC VALIDATION
+        # --------------------------------------------------
         if not name:
             return {
                 "status": "error",
@@ -680,6 +869,52 @@ def get_car_repair_request_by_id(name):
                 "message": f"Car Repair Request '{name}' not found"
             }
 
+        # --------------------------------------------------
+        # USER & ROLES
+        # --------------------------------------------------
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        is_admin = "Administrator" in roles
+        is_receptionist = "Receptionist" in roles
+
+        # --------------------------------------------------
+        # GET EMPLOYEE LINKED TO USER (DO NOT CHECK ROLE)
+        # --------------------------------------------------
+        employee = frappe.db.get_value(
+            "Employee",
+            {"user_id": user},
+            "name"
+        )
+
+        # --------------------------------------------------
+        # LOAD DOCUMENT
+        # --------------------------------------------------
+        doc = frappe.get_doc("Car Repair Request", name)
+
+        # --------------------------------------------------
+        # ACCESS CONTROL (BY RECORD)
+        # --------------------------------------------------
+        if is_admin or is_receptionist:
+            pass  # full access
+
+        elif employee:
+            # Assign Advisor → must match
+            if doc.assign_adviser != employee:
+                frappe.throw(
+                    "You are not allowed to view this Car Repair Request",
+                    frappe.PermissionError
+                )
+
+        else:
+            frappe.throw(
+                "You are not allowed to view Car Repair Requests",
+                frappe.PermissionError
+            )
+
+        # --------------------------------------------------
+        # IMAGE MAP
+        # --------------------------------------------------
         IMAGE_TYPE_KEY_MAP = {
             "Front View": "front_view",
             "Back View": "back_view",
@@ -695,7 +930,6 @@ def get_car_repair_request_by_id(name):
                 "right_view": []
             }
 
-        doc = frappe.get_doc("Car Repair Request", name)
         data = doc.as_dict()
 
         # vehicle concerns
@@ -722,9 +956,12 @@ def get_car_repair_request_by_id(name):
 
         return {
             "status": "success",
-            "status_code":200,
+            "status_code": 200,
             "data": data
         }
+
+    except frappe.PermissionError:
+        raise
 
     except Exception:
         frappe.log_error(
@@ -735,8 +972,6 @@ def get_car_repair_request_by_id(name):
             "status": "error",
             "message": "Internal Server Error"
         }
-
-
 
 
 
@@ -760,9 +995,19 @@ def update_car_repair_request():
     - Returns child table images as '/files/<filename>' for all images
     - Avoids duplicates
     """
-    validate_api_access("Car Repair Request")
-
+ 
     try:
+        
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles and "Assign Advisor" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to Update Car Repair Request"
+    }
+            
         # -------------------------
         # Get request data
         # -------------------------

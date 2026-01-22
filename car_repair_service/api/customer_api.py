@@ -5,7 +5,15 @@ from car_repair_service.api.utils import get_paginated_data
 #................Create Customer...............
 @frappe.whitelist(allow_guest=False)
 def create_customer(customer_name, mobile_no=None, email_id=None):
-    
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to Create list"
+    }
     
     doc = frappe.new_doc("Customer")
     doc.customer_name = customer_name
@@ -24,6 +32,16 @@ def create_customer(customer_name, mobile_no=None, email_id=None):
 
 @frappe.whitelist(allow_guest=False)
 def get_customer(search=None):
+    
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View Customer list"
+    }
     if not search:
         return {"status": "error", "message": "Search parameter is required"}
 
@@ -92,6 +110,15 @@ def delete_customer(customer_id, force=False):
     :param customer_id: name of customer doc (e.g. CUST-0001)
     :param force: pass true to force delete even if linked (optional)
     """
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to delete list"
+    }
 
     if not customer_id:
         return {"status": "error", "message": "Customer ID is required"}
@@ -148,7 +175,20 @@ def list_customers(
     """
     ERPNext default-style Customer list API
     """
+    
+    
+    
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
 
+    if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View customer list"
+    }
+    
+    
     page = cint(page)
     page_size = cint(page_size)
     start = (page - 1) * page_size

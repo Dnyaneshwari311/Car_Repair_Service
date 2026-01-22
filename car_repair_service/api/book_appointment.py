@@ -312,7 +312,7 @@ def create_car_repair_request(appointment_name, status=None):
         # ----------------------------------
         # BLOCK ADVISER
         # ----------------------------------
-        if "Adviser" in roles and not (is_admin or is_receptionist):
+        if "Assign Advisor" in roles and not (is_admin or is_receptionist):
             frappe.throw(
                 "Adviser is not allowed to create Car Repair Request",
                 frappe.PermissionError

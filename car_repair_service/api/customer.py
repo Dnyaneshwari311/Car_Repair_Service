@@ -13,6 +13,15 @@ from car_repair_service.api.utils import get_paginated_data
 def create_customer_and_vehicle(data=None):
     
     try:
+        user = frappe.session.user
+        roles = frappe.get_roles(user)
+
+        if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to Create Vehicle list"
+    }
         print("TOKEN RECEIVED:", frappe.get_request_header("Authorization"))
         print("CURRENT USER:", frappe.session.user)
         print("SID:", frappe.form_dict.get("sid"))
@@ -290,8 +299,11 @@ def delete_customer_and_vehicles(customer_id, force=False):
 # --------------------------------------------------------
 @frappe.whitelist(allow_guest=False)
 def customer_vehicle_list(page=1, page_size=10, search=None, sort_by="c.creation", sort_order="desc"):
+    
    
     """Return Customer + Vehicle list with pagination, search, sorting"""
+    
+    
     print("AUTH HEADER:", frappe.request.headers.get("Authorization"))
     print("ARGS:", frappe.form_dict)
  
@@ -303,7 +315,18 @@ def customer_vehicle_list(page=1, page_size=10, search=None, sort_by="c.creation
     print("CURRENT USER:", frappe.session.user)
     print("SID:", frappe.form_dict.get("sid"))
     print("Cookie SID:", frappe.request.cookies.get("sid"))
+    
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
 
+    if "Administrator" not in roles and "Receptionist" not in roles:
+           
+            return {
+            "status": "error",
+           "message": "You are not allowed to View Vehicle list"
+    }
+    
+    
     # SEARCH FILTER
     search_filter = ""
     if search:
